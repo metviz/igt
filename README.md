@@ -1,6 +1,7 @@
-# igt — Instagram transcript CLI
+# igt — Instagram/YouTube/Facebook transcript CLI
 
-Command-line counterpart of the Instagram Transcript Generator Chrome extension (a separate project). Downloads a reel/post's audio with
+Command-line counterpart of the Instagram Transcript Generator Chrome extension (a separate project). Downloads an
+Instagram reel/post's, YouTube video's or Facebook reel/video's audio with
 [yt-dlp](https://github.com/yt-dlp/yt-dlp) and transcribes it locally with
 [faster-whisper](https://github.com/SYSTRAN/faster-whisper). No server needed.
 
@@ -18,15 +19,19 @@ The first run downloads the Whisper model (`base` by default).
 
 ```bash
 igt https://www.instagram.com/reel/ABC123xyz/                 # transcript text to stdout
+igt https://www.youtube.com/watch?v=dQw4w9WgXcQ                # or a YouTube video/short
+igt https://www.facebook.com/reel/1234567890123456             # or a Facebook reel/video/fb.watch link
 igt URL --format md                                            # txt | srt | json | md (markdown: source URL, metadata, caption, timestamped transcript)
 igt URL --language hi --model small                            # skip auto-detect, bigger model
-igt URL --cookies-from firefox                                 # login-walled posts: use your browser session
+igt URL --cookies-from firefox                                 # login-walled videos: use your browser session
 igt URL --cookies ~/secrets/instagram-cookies.txt              # ...or an exported cookies file (outside the repo)
 IGT_OUT_ROOT=~/transcripts igt URL --out --format srt          # writes ~/transcripts/ABC123xyz.srt
 ```
 
-Accepted URLs: `instagram.com/(reel|p|tv)/<id>/`, optionally with a `/<username>/` prefix. Tracking
-parameters such as `?igsh=` are dropped.
+Accepted URLs: `instagram.com/(reel|p|tv)/<id>/` (optionally with a `/<username>/` prefix);
+`youtube.com/watch?v=<id>`, `youtube.com/shorts/<id>`, `youtu.be/<id>`; or `facebook.com/reel/<id>/`,
+`facebook.com/(<username>/)videos/<id>/`, `facebook.com/watch/?v=<id>`, `fb.watch/<code>`. Tracking
+parameters such as `?igsh=` or `&t=` are dropped.
 
 ## Environment
 
@@ -49,8 +54,8 @@ Cookies are credentials — keep the file out of the repo.
 | 5 | Transcription failed, or no speech detected |
 | 130 | Interrupted (Ctrl-C) |
 
-`--format json` and `--format md` include the post's creator, upload date, duration, caption and hashtags
-(taken from yt-dlp; fields Instagram doesn't provide are left empty). `--cookies` and `--cookies-from` are
+`--format json` and `--format md` include the video's creator, upload date, duration, caption and hashtags
+(taken from yt-dlp; fields the source site doesn't provide are left empty). `--cookies` and `--cookies-from` are
 mutually exclusive; `--cookies-from` wins over `IGT_COOKIES_FILE`.
 
 Errors go to stderr as `error: <message>`; stdout carries only the result.
@@ -62,6 +67,6 @@ uv run pytest --cov=igt                       # unit tests, no network
 IGT_TEST_URL=<public reel> uv run pytest -m integration   # opt-in live smoke test
 ```
 
-yt-dlp's Instagram extractor breaks periodically; update with `uv lock --upgrade-package yt-dlp`.
+yt-dlp's Instagram/YouTube/Facebook extractors break periodically; update with `uv lock --upgrade-package yt-dlp`.
 
-Only download content you have the right to use, and respect Instagram's Terms of Service.
+Only download content you have the right to use, and respect each site's Terms of Service.

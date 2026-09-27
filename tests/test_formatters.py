@@ -109,4 +109,4 @@ def test_md_title_is_one_line_and_has_a_fallback():
     t = Transcript("instagram", "Line one\nline two", "s", "", (Segment(0, 1, "x"),))
     assert to_md(t).startswith("# Line one line two\n")
     blank = Transcript("instagram", " ", "s", "", (Segment(0, 1, "x"),))
-    assert to_md(blank).startswith("# Instagram transcript\n")
+    assert to_md(blank).startswith("# Video transcript\n")

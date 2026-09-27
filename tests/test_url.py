@@ -1,27 +1,200 @@
 import pytest
 
 from igt.errors import InvalidUrlError
-from igt.url import parse_instagram_url
+from igt.url import parse_video_url
 
 
 @pytest.mark.parametrize(
-    "raw,kind,code",
+    "raw,platform,kind,code,canonical",
     [
-        ("https://www.instagram.com/reel/ABC123xyz/", "reel", "ABC123xyz"),
-        ("https://instagram.com/reel/ABC123xyz", "reel", "ABC123xyz"),
-        ("https://www.instagram.com/p/Cx_9-aB/?igsh=MXx&utm_source=qr", "p", "Cx_9-aB"),
-        ("https://www.instagram.com/tv/ZZ99/", "tv", "ZZ99"),
-        ("https://www.instagram.com/some.user/reel/ABC123xyz/", "reel", "ABC123xyz"),
-        ("  https://www.instagram.com/reel/ABC123xyz/  ", "reel", "ABC123xyz"),
-        ("HTTPS://WWW.INSTAGRAM.COM/reel/ABC123xyz/", "reel", "ABC123xyz"),
-        ("https://www.instagram.com/reels/Ddv7x-Yso_r/", "reel", "Ddv7x-Yso_r"),
-        ("https://www.instagram.com/some.user/reels/ABC123xyz/", "reel", "ABC123xyz"),
+        (
+            "https://www.instagram.com/reel/ABC123xyz/",
+            "instagram",
+            "reel",
+            "ABC123xyz",
+            "https://www.instagram.com/reel/ABC123xyz/",
+        ),
+        (
+            "https://instagram.com/reel/ABC123xyz",
+            "instagram",
+            "reel",
+            "ABC123xyz",
+            "https://www.instagram.com/reel/ABC123xyz/",
+        ),
+        (
+            "https://www.instagram.com/p/Cx_9-aB/?igsh=MXx&utm_source=qr",
+            "instagram",
+            "p",
+            "Cx_9-aB",
+            "https://www.instagram.com/p/Cx_9-aB/",
+        ),
+        (
+            "https://www.instagram.com/tv/ZZ99/",
+            "instagram",
+            "tv",
+            "ZZ99",
+            "https://www.instagram.com/tv/ZZ99/",
+        ),
+        (
+            "https://www.instagram.com/some.user/reel/ABC123xyz/",
+            "instagram",
+            "reel",
+            "ABC123xyz",
+            "https://www.instagram.com/reel/ABC123xyz/",
+        ),
+        (
+            "  https://www.instagram.com/reel/ABC123xyz/  ",
+            "instagram",
+            "reel",
+            "ABC123xyz",
+            "https://www.instagram.com/reel/ABC123xyz/",
+        ),
+        (
+            "HTTPS://WWW.INSTAGRAM.COM/reel/ABC123xyz/",
+            "instagram",
+            "reel",
+            "ABC123xyz",
+            "https://www.instagram.com/reel/ABC123xyz/",
+        ),
+        (
+            "https://www.instagram.com/reels/Ddv7x-Yso_r/",
+            "instagram",
+            "reel",
+            "Ddv7x-Yso_r",
+            "https://www.instagram.com/reel/Ddv7x-Yso_r/",
+        ),
+        (
+            "https://www.instagram.com/some.user/reels/ABC123xyz/",
+            "instagram",
+            "reel",
+            "ABC123xyz",
+            "https://www.instagram.com/reel/ABC123xyz/",
+        ),
+        (
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "youtube",
+            "video",
+            "dQw4w9WgXcQ",
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        ),
+        (
+            "https://youtube.com/watch?v=dQw4w9WgXcQ&t=30s",
+            "youtube",
+            "video",
+            "dQw4w9WgXcQ",
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        ),
+        (
+            "https://m.youtube.com/watch?v=dQw4w9WgXcQ",
+            "youtube",
+            "video",
+            "dQw4w9WgXcQ",
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        ),
+        (
+            "https://youtu.be/dQw4w9WgXcQ",
+            "youtube",
+            "video",
+            "dQw4w9WgXcQ",
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        ),
+        (
+            "https://youtu.be/dQw4w9WgXcQ?si=abc123",
+            "youtube",
+            "video",
+            "dQw4w9WgXcQ",
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        ),
+        (
+            "  HTTPS://YOUTU.BE/dQw4w9WgXcQ  ",
+            "youtube",
+            "video",
+            "dQw4w9WgXcQ",
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        ),
+        (
+            "https://www.youtube.com/shorts/abc12345678",
+            "youtube",
+            "shorts",
+            "abc12345678",
+            "https://www.youtube.com/shorts/abc12345678",
+        ),
+        (
+            "https://www.youtube.com/shorts/abc12345678/",
+            "youtube",
+            "shorts",
+            "abc12345678",
+            "https://www.youtube.com/shorts/abc12345678",
+        ),
+        (
+            "https://www.facebook.com/reel/2105516073664401/",
+            "facebook",
+            "reel",
+            "2105516073664401",
+            "https://www.facebook.com/reel/2105516073664401/",
+        ),
+        (
+            "https://www.facebook.com/reel/2105516073664401",
+            "facebook",
+            "reel",
+            "2105516073664401",
+            "https://www.facebook.com/reel/2105516073664401/",
+        ),
+        (
+            "https://facebook.com/reel/2105516073664401/",
+            "facebook",
+            "reel",
+            "2105516073664401",
+            "https://www.facebook.com/reel/2105516073664401/",
+        ),
+        (
+            "https://m.facebook.com/reel/2105516073664401/",
+            "facebook",
+            "reel",
+            "2105516073664401",
+            "https://www.facebook.com/reel/2105516073664401/",
+        ),
+        (
+            "  HTTPS://WWW.FACEBOOK.COM/reel/2105516073664401/  ",
+            "facebook",
+            "reel",
+            "2105516073664401",
+            "https://www.facebook.com/reel/2105516073664401/",
+        ),
+        (
+            "https://www.facebook.com/someuser/videos/1234567890/",
+            "facebook",
+            "video",
+            "1234567890",
+            "https://www.facebook.com/watch/?v=1234567890",
+        ),
+        (
+            "https://www.facebook.com/watch/?v=1234567890",
+            "facebook",
+            "video",
+            "1234567890",
+            "https://www.facebook.com/watch/?v=1234567890",
+        ),
+        (
+            "https://www.facebook.com/watch?v=1234567890&extra=1",
+            "facebook",
+            "video",
+            "1234567890",
+            "https://www.facebook.com/watch/?v=1234567890",
+        ),
+        (
+            "https://fb.watch/abcDEF12/",
+            "facebook",
+            "video",
+            "abcDEF12",
+            "https://fb.watch/abcDEF12",
+        ),
     ],
 )
-def test_accepts_and_canonicalises(raw, kind, code):
-    parsed = parse_instagram_url(raw)
-    assert (parsed.kind, parsed.shortcode) == (kind, code)
-    assert parsed.canonical == f"https://www.instagram.com/{kind}/{code}/"
+def test_accepts_and_canonicalises(raw, platform, kind, code, canonical):
+    parsed = parse_video_url(raw)
+    assert (parsed.platform, parsed.kind, parsed.shortcode) == (platform, kind, code)
+    assert parsed.canonical == canonical
 
 
 @pytest.mark.parametrize(
@@ -33,14 +206,43 @@ def test_accepts_and_canonicalises(raw, kind, code):
         "https://www.instagram.com/someuser/",
         "https://www.instagram.com/stories/user/123/",
         "https://www.instagram.com/reel//",
-        "https://www.instagram.com/reels/",  # the Reels feed, not a single reel
-        "https://www.instagram.com/someuser/reels/",  # a profile's Reels tab
+        "https://www.instagram.com/reels/",
+        "https://www.instagram.com/someuser/reels/",
         "https://instagram.com.evil.com/reel/ABC/",
         "https://evilinstagram.com/reel/ABC/",
-        "https://www.youtube.com/watch?v=abc",
+        "https://www.instagram.com/watch?v=abc",
+        "https://www.youtube.com/",
+        "https://www.youtube.com/watch",
+        "https://www.youtube.com/watch?v=",
+        "https://www.youtube.com/watch?v=has space",
+        "https://www.youtube.com/channel/UCabcdefghijklmnop",
+        "https://www.youtube.com/playlist?list=PLabc",
+        "https://www.youtube.com/results?search_query=cats",
+        "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        "https://www.youtube.com/v/dQw4w9WgXcQ",
+        "https://www.youtube.com/reel/ABC",
+        "https://www.youtube.com/shorts/",
+        "https://youtu.be/",
+        "https://youtube.com.evil.com/watch?v=dQw4w9WgXcQ",
+        "https://evilyoutube.com/watch?v=dQw4w9WgXcQ",
         "ftp://www.instagram.com/reel/ABC/",
+        "ftp://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "https://www.facebook.com/",
+        "https://www.facebook.com/someuser/",
+        "https://www.facebook.com/reel/",
+        "https://www.facebook.com/reel/abc",
+        "https://www.facebook.com/watch",
+        "https://www.facebook.com/watch?v=",
+        "https://www.facebook.com/watch?v=abc",
+        "https://www.facebook.com/someuser/videos/",
+        "https://www.facebook.com/groups/12345/",
+        "https://www.facebook.com/marketplace/item/12345/",
+        "https://fb.watch/",
+        "https://facebook.com.evil.com/reel/12345/",
+        "https://evilfacebook.com/reel/12345/",
+        "ftp://www.facebook.com/reel/12345/",
     ],
 )
 def test_rejects(raw):
     with pytest.raises(InvalidUrlError):
-        parse_instagram_url(raw)
+        parse_video_url(raw)

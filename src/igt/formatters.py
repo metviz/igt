@@ -57,7 +57,7 @@ def _clock(seconds: float) -> str:
 
 
 def to_md(t: Transcript) -> str:
-    title = " ".join(t.title.split()) or "Instagram transcript"
+    title = " ".join(t.title.split()) or "Video transcript"
     parts = [f"# {title}"]
     if t.url:
         parts.append(f"Source: {t.url}")

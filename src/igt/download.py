@@ -63,11 +63,11 @@ def _explain(message: str) -> str:
     low = message.lower()
     if "login" in low or "log in" in low or "cookies" in low:
         return (
-            "Instagram requires login for this post. Pass --cookies-from BROWSER, "
+            "This video requires login. Pass --cookies-from BROWSER, "
             "or --cookies FILE (Netscape format) / set IGT_COOKIES_FILE."
         )
     if "429" in low or "rate-limit" in low or "rate limit" in low:
-        return "Rate-limited by Instagram. Wait and retry."
+        return "Rate-limited. Wait and retry."
     if "no video" in low:
         return "This post has no video to transcribe."
     return message.splitlines()[0] if message else "download failed"

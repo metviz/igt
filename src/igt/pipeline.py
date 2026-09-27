@@ -6,7 +6,7 @@ from igt.download import Downloader
 from igt.errors import NoSpeechError
 from igt.models import Transcript
 from igt.transcribe import Transcriber
-from igt.url import parse_instagram_url
+from igt.url import parse_video_url
 
 
 def generate(
@@ -16,7 +16,7 @@ def generate(
     transcriber: Transcriber,
     language: str = "auto",
 ) -> Transcript:
-    parsed = parse_instagram_url(url)
+    parsed = parse_video_url(url)
     # Audio scratch lives in the system temp dir, never in the repo; always removed.
     with tempfile.TemporaryDirectory(prefix="igt-") as tmp:
         downloaded = downloader.fetch(parsed.canonical, Path(tmp))
@@ -24,7 +24,7 @@ def generate(
     if not any(s.text.strip() for s in segments):
         raise NoSpeechError("no speech detected in this video (music-only or silent)")
     return Transcript(
-        "instagram",
+        parsed.platform,
         downloaded.title,
         "local-whisper",
         detected,

@@ -11,7 +11,7 @@ from igt.errors import ConfigError, IgtError
 from igt.formatters import FORMATS
 from igt.pipeline import generate
 from igt.transcribe import FasterWhisperTranscriber, Transcriber
-from igt.url import parse_instagram_url
+from igt.url import parse_video_url
 
 
 BROWSERS = (
@@ -28,9 +28,12 @@ BROWSERS = (
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="igt", description="Transcribe an Instagram reel/post video."
+        prog="igt", description="Transcribe an Instagram, YouTube or Facebook video."
     )
-    p.add_argument("url", help="Instagram reel/post/tv URL")
+    p.add_argument(
+        "url",
+        help="Instagram reel/post/tv, YouTube watch/shorts, or Facebook reel/video URL",
+    )
     p.add_argument("--format", choices=sorted(FORMATS), default="txt")
     p.add_argument(
         "--language", default="auto", help="language code or 'auto' (default)"
@@ -79,7 +82,7 @@ def _run(
     transcriber: Transcriber | None,
     stdout: TextIO,
 ) -> None:
-    parsed = parse_instagram_url(args.url)
+    parsed = parse_video_url(args.url)
     if args.cookies_from:  # an explicit browser session beats any cookies file
         cookies = None
     elif args.cookies:

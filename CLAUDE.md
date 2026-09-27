@@ -1,6 +1,7 @@
-# igt — Instagram transcript CLI
+# igt — Instagram/YouTube/Facebook transcript CLI
 
-`igt <instagram-url>` downloads a reel/post's audio (yt-dlp) and transcribes it locally (faster-whisper).
+`igt <url>` downloads an Instagram reel/post's, YouTube video's or Facebook reel/video's audio (yt-dlp) and
+transcribes it locally (faster-whisper).
 Output: `txt | srt | json | md` to stdout, or to a file with `--out`. Standalone project; it began as the CLI
 counterpart of a Chrome extension (separate repo) but shares no code with it. History: `docs/plans/`.
 
@@ -20,7 +21,7 @@ uv run igt --help
 
 ```
 src/igt/
-  url.py         parse_instagram_url -> ParsedUrl (strict host allow-list, canonical URL)
+  url.py         parse_video_url -> ParsedUrl (Instagram + YouTube + Facebook; strict host allow-list, canonical URL)
   models.py      Segment, Transcript (frozen dataclasses)
   formatters.py  to_txt / to_srt / to_json / to_md, FORMATS registry
   config.py      REPO_ROOT, outside(), env_path(), require_out_root() — the ONLY module that knows path policy
@@ -74,7 +75,7 @@ Design: pure core + two I/O seams (`Downloader`, `Transcriber`) injected into `p
 
 ## Notes
 
-- yt-dlp's Instagram extractor breaks periodically: `uv lock --upgrade-package yt-dlp`.
+- yt-dlp's Instagram/YouTube/Facebook extractors break periodically: `uv lock --upgrade-package yt-dlp`.
 - A formatter hook (ruff/black) may rewrite files after edits; re-read a file before an `Edit` if an
   `old_string` fails to match.
-- Only download content you have the right to use; respect Instagram's Terms of Service.
+- Only download content you have the right to use; respect each site's Terms of Service.
