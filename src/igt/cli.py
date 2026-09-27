@@ -28,11 +28,15 @@ BROWSERS = (
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="igt", description="Transcribe an Instagram, YouTube or Facebook video."
+        prog="igt",
+        description="Transcribe an Instagram, YouTube, Facebook or TikTok video.",
     )
     p.add_argument(
         "url",
-        help="Instagram reel/post/tv, YouTube watch/shorts, or Facebook reel/video URL",
+        help=(
+            "Instagram reel/post/tv, YouTube watch/shorts, Facebook reel/video, "
+            "or TikTok video URL"
+        ),
     )
     p.add_argument("--format", choices=sorted(FORMATS), default="txt")
     p.add_argument(

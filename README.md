@@ -1,7 +1,7 @@
-# igt — Instagram/YouTube/Facebook transcript CLI
+# igt — Instagram/YouTube/Facebook/TikTok transcript CLI
 
 Command-line counterpart of the Instagram Transcript Generator Chrome extension (a separate project). Downloads an
-Instagram reel/post's, YouTube video's or Facebook reel/video's audio with
+Instagram reel/post's, YouTube video's, Facebook reel/video's or TikTok video's audio with
 [yt-dlp](https://github.com/yt-dlp/yt-dlp) and transcribes it locally with
 [faster-whisper](https://github.com/SYSTRAN/faster-whisper). No server needed.
 
@@ -21,6 +21,7 @@ The first run downloads the Whisper model (`base` by default).
 igt https://www.instagram.com/reel/ABC123xyz/                 # transcript text to stdout
 igt https://www.youtube.com/watch?v=dQw4w9WgXcQ                # or a YouTube video/short
 igt https://www.facebook.com/reel/1234567890123456             # or a Facebook reel/video/fb.watch link
+igt https://www.tiktok.com/@someuser/video/7123456789012345678  # or a TikTok video/short link
 igt URL --format md                                            # txt | srt | json | md (markdown: source URL, metadata, caption, timestamped transcript)
 igt URL --language hi --model small                            # skip auto-detect, bigger model
 igt URL --cookies-from firefox                                 # login-walled videos: use your browser session
@@ -29,8 +30,9 @@ IGT_OUT_ROOT=~/transcripts igt URL --out --format srt          # writes ~/transc
 ```
 
 Accepted URLs: `instagram.com/(reel|p|tv)/<id>/` (optionally with a `/<username>/` prefix);
-`youtube.com/watch?v=<id>`, `youtube.com/shorts/<id>`, `youtu.be/<id>`; or `facebook.com/reel/<id>/`,
-`facebook.com/(<username>/)videos/<id>/`, `facebook.com/watch/?v=<id>`, `fb.watch/<code>`. Tracking
+`youtube.com/watch?v=<id>`, `youtube.com/shorts/<id>`, `youtu.be/<id>`; `facebook.com/reel/<id>/`,
+`facebook.com/(<username>/)videos/<id>/`, `facebook.com/watch/?v=<id>`, `fb.watch/<code>`; or
+`tiktok.com/@<username>/video/<id>/`, `vm.tiktok.com/<code>`, `vt.tiktok.com/<code>`. Tracking
 parameters such as `?igsh=` or `&t=` are dropped.
 
 ## Environment
@@ -67,6 +69,7 @@ uv run pytest --cov=igt                       # unit tests, no network
 IGT_TEST_URL=<public reel> uv run pytest -m integration   # opt-in live smoke test
 ```
 
-yt-dlp's Instagram/YouTube/Facebook extractors break periodically; update with `uv lock --upgrade-package yt-dlp`.
+yt-dlp's extractors for these sites break periodically (TikTok's most often); update with
+`uv lock --upgrade-package yt-dlp`.
 
 Only download content you have the right to use, and respect each site's Terms of Service.

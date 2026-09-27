@@ -27,6 +27,13 @@ _FACEBOOK_SHORT_ID = re.compile(
     r"[A-Za-z0-9]+"
 )  # fb.watch shortcodes are opaque, not video ids
 
+_TIKTOK_HOSTS = {"tiktok.com", "www.tiktok.com", "m.tiktok.com"}
+_TIKTOK_SHORT_HOSTS = {"vm.tiktok.com", "vt.tiktok.com"}
+_TIKTOK_PATH = re.compile(r"^/@([A-Za-z0-9_.]+)/video/(\d+)/?$")
+_TIKTOK_SHORT_ID = re.compile(
+    r"[A-Za-z0-9]+"
+)  # vm/vt.tiktok.com shortcodes are opaque, not video ids
+
 
 @dataclass(frozen=True)
 class ParsedUrl:
@@ -105,12 +112,32 @@ def _parse_facebook(parts: ParseResult) -> ParsedUrl | None:
     raise InvalidUrlError(f"not a Facebook reel/video URL: {parts.geturl()!r}")
 
 
+def _parse_tiktok(parts: ParseResult) -> ParsedUrl | None:
+    host = parts.hostname or ""
+    if host in _TIKTOK_SHORT_HOSTS:
+        code = parts.path.strip("/")
+        if code and _TIKTOK_SHORT_ID.fullmatch(code):
+            return ParsedUrl("tiktok", "video", code, f"https://{host}/{code}/")
+        raise InvalidUrlError(f"not a TikTok video URL: {parts.geturl()!r}")
+    if host not in _TIKTOK_HOSTS:
+        return None
+    match = _TIKTOK_PATH.match(parts.path)
+    if not match:
+        raise InvalidUrlError(f"not a TikTok video URL: {parts.geturl()!r}")
+    user, code = match.groups()
+    return ParsedUrl(
+        "tiktok", "video", code, f"https://www.tiktok.com/@{user}/video/{code}"
+    )
+
+
 def parse_video_url(raw: str) -> ParsedUrl:
     parts = urlparse(raw.strip())
     if parts.scheme not in ("http", "https"):
-        raise InvalidUrlError(f"not an Instagram, YouTube or Facebook URL: {raw!r}")
-    for parser in (_parse_instagram, _parse_youtube, _parse_facebook):
+        raise InvalidUrlError(
+            f"not an Instagram, YouTube, Facebook or TikTok URL: {raw!r}"
+        )
+    for parser in (_parse_instagram, _parse_youtube, _parse_facebook, _parse_tiktok):
         result = parser(parts)
         if result is not None:
             return result
-    raise InvalidUrlError(f"not an Instagram, YouTube or Facebook URL: {raw!r}")
+    raise InvalidUrlError(f"not an Instagram, YouTube, Facebook or TikTok URL: {raw!r}")
