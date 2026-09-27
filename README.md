@@ -18,9 +18,10 @@ The first run downloads the Whisper model (`base` by default).
 
 ```bash
 igt https://www.instagram.com/reel/ABC123xyz/                 # transcript text to stdout
-igt URL --format srt                                           # txt | srt | json
+igt URL --format md                                            # txt | srt | json | md (markdown: source URL, metadata, caption, timestamped transcript)
 igt URL --language hi --model small                            # skip auto-detect, bigger model
-igt URL --cookies ~/secrets/instagram-cookies.txt              # login-walled posts
+igt URL --cookies-from firefox                                 # login-walled posts: use your browser session
+igt URL --cookies ~/secrets/instagram-cookies.txt              # ...or an exported cookies file (outside the repo)
 IGT_OUT_ROOT=~/transcripts igt URL --out --format srt          # writes ~/transcripts/ABC123xyz.srt
 ```
 
@@ -47,6 +48,10 @@ Cookies are credentials — keep the file out of the repo.
 | 4 | Download failed (login required, no video, rate limit, ...) |
 | 5 | Transcription failed, or no speech detected |
 | 130 | Interrupted (Ctrl-C) |
+
+`--format json` and `--format md` include the post's creator, upload date, duration, caption and hashtags
+(taken from yt-dlp; fields Instagram doesn't provide are left empty). `--cookies` and `--cookies-from` are
+mutually exclusive; `--cookies-from` wins over `IGT_COOKIES_FILE`.
 
 Errors go to stderr as `error: <message>`; stdout carries only the result.
 

@@ -50,8 +50,39 @@ def to_json(t: Transcript) -> str:
     )
 
 
+def _clock(seconds: float) -> str:
+    h, rem = divmod(int(max(seconds, 0)), 3600)
+    m, s = divmod(rem, 60)
+    return f"{h}:{m:02}:{s:02}" if h else f"{m:02}:{s:02}"
+
+
+def to_md(t: Transcript) -> str:
+    title = " ".join(t.title.split()) or "Instagram transcript"
+    parts = [f"# {title}"]
+    if t.url:
+        parts.append(f"Source: {t.url}")
+    facts = [
+        ("Creator", t.creator),
+        ("Uploaded", t.upload_date),
+        ("Duration", _clock(t.duration) if t.duration is not None else ""),
+        ("Language", t.language),
+        ("Hashtags", " ".join(f"#{h}" for h in t.hashtags)),
+    ]
+    lines = [f"- {label}: {value}" for label, value in facts if value]
+    if lines:
+        parts.append("\n".join(lines))
+    if t.caption.strip():
+        parts.append(f"## Caption\n\n{t.caption.strip()}")
+    cues = [
+        f"[{_clock(s.start)}] {s.text.strip()}" for s in t.segments if s.text.strip()
+    ]
+    parts.append("## Transcript\n\n" + "\n".join(cues))
+    return "\n\n".join(parts) + "\n"
+
+
 FORMATS: dict[str, Callable[[Transcript], str]] = {
     "txt": to_txt,
     "srt": to_srt,
     "json": to_json,
+    "md": to_md,
 }

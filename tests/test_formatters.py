@@ -1,6 +1,6 @@
 import json
 
-from igt.formatters import FORMATS, to_json, to_srt, to_txt
+from igt.formatters import FORMATS, to_json, to_md, to_srt, to_txt
 from igt.models import Segment, Transcript
 
 
@@ -40,7 +40,7 @@ def test_json_shape_mirrors_server_payload_and_keeps_unicode():
 
 
 def test_registry_keys():
-    assert set(FORMATS) == {"txt", "srt", "json"}
+    assert set(FORMATS) == {"txt", "srt", "json", "md"}
 
 
 def test_json_includes_metadata():
@@ -70,3 +70,43 @@ def test_json_includes_metadata():
 def test_json_metadata_defaults_when_absent():
     data = json.loads(to_json(make(Segment(0, 1, "x"))))
     assert (data["creator"], data["duration"], data["hashtags"]) == ("", None, [])
+
+
+def rich():
+    return Transcript(
+        "instagram",
+        "My reel",
+        "local-whisper",
+        "en",
+        (Segment(0, 1.5, "hello"), Segment(61, 63, "  "), Segment(3725, 3726, "world")),
+        url="https://www.instagram.com/reel/A/",
+        creator="alice",
+        upload_date="2026-09-27",
+        duration=32.5,
+        caption="Hi #a",
+        hashtags=("a",),
+    )
+
+
+def test_md_full_document_source_url_first():
+    assert to_md(rich()) == (
+        "# My reel\n\n"
+        "Source: https://www.instagram.com/reel/A/\n\n"
+        "- Creator: alice\n- Uploaded: 2026-09-27\n- Duration: 00:32\n"
+        "- Language: en\n- Hashtags: #a\n\n"
+        "## Caption\n\nHi #a\n\n"
+        "## Transcript\n\n[00:00] hello\n[1:02:05] world\n"
+    )
+
+
+def test_md_minimal_omits_empty_sections():
+    assert to_md(make(Segment(0, 1, "hello"))) == (
+        "# T\n\n- Language: en\n\n## Transcript\n\n[00:00] hello\n"
+    )
+
+
+def test_md_title_is_one_line_and_has_a_fallback():
+    t = Transcript("instagram", "Line one\nline two", "s", "", (Segment(0, 1, "x"),))
+    assert to_md(t).startswith("# Line one line two\n")
+    blank = Transcript("instagram", " ", "s", "", (Segment(0, 1, "x"),))
+    assert to_md(blank).startswith("# Instagram transcript\n")

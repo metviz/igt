@@ -204,3 +204,14 @@ def test_cookies_from_bad_usage_exits_2(argv):
     with pytest.raises(SystemExit) as exc:
         main(argv, env={})
     assert exc.value.code == 2
+
+
+def test_md_format_to_stdout():
+    _, out, _ = run([URL, "--format", "md"])
+    assert out.startswith("# My reel\n\nSource: https://www.instagram.com/reel/ABC123xyz/\n")
+    assert out.endswith("## Transcript\n\n[00:00] hello\n[00:01] world\n")
+
+
+def test_md_out_file_extension(tmp_path):
+    code, out, _ = run([URL, "--out", "--format", "md"], env={"IGT_OUT_ROOT": str(tmp_path)})
+    assert code == 0 and out.strip() == str(tmp_path.resolve() / "ABC123xyz.md")
