@@ -55,8 +55,13 @@ Design: pure core + two I/O seams (`Downloader`, `Transcriber`) injected into `p
 
 ## Open items
 
-- Live smoke test not yet run against a real reel with speech (needs `IGT_TEST_URL`); `--cookies-from`
-  untested against a real browser profile.
+- Live smoke test done (2026-09-27): a public reel and a public `/p/` post transcribe end to end, and
+  `IGT_TEST_URL=<reel> pytest -m integration` passes. It found and fixed `/reels/` URLs and the CUDA
+  `device="auto"` crash (Whisper is now pinned to cpu/int8; no `--device` flag).
+- `--cookies-from chrome` loads cookies and exits 0 on Linux (needs `secretstorage`, now a Linux-only dep),
+  but it has only been run on public posts. Not yet shown to get past a real login wall; needs a
+  login-walled URL. Other browsers untested.
+- The default `base` model garbles proper nouns (e.g. Kremlin, Murmansk); `--model small` untested.
 - Deferred minors from the whole-branch review: Whisper hallucination on music-only clips ("Thank you.");
   bad `--language`/`--model` only detected after the download (exit 5, should be 2 at parse time);
   multi-video carousels download every video but transcribe only the first (`noplaylist` is ignored by the
