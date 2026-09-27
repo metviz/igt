@@ -95,4 +95,13 @@ and that specific reel staying up). See `.github/workflows/ci.yml`.
 yt-dlp's extractors for these sites break periodically (TikTok's most often); update with
 `uv lock --upgrade-package yt-dlp`.
 
-Only download content you have the right to use, and respect each site's Terms of Service.
+## Disclaimer
+
+`igt` is an independent, unofficial tool with no affiliation to, endorsement by, or sponsorship
+from Instagram/Meta, YouTube/Google, Facebook/Meta, or TikTok/ByteDance. All product names and
+trademarks belong to their respective owners.
+
+Only download and transcribe content you have the right to use. You are responsible for complying
+with each platform's Terms of Service, applicable copyright law, and any content owner's rights;
+this project provides no legal guidance on that. Provided under the MIT license, "as is," with no
+warranty of any kind — see [LICENSE](LICENSE).
