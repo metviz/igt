@@ -7,7 +7,11 @@ name = "igt"
 version = "0.1.0"
 description = "Instagram reel/post transcript CLI"
 requires-python = ">=3.10"
-dependencies = ["yt-dlp>=2025.1.1", "faster-whisper>=1.0"]
+dependencies = [
+    "yt-dlp>=2025.1.1",
+    "faster-whisper>=1.0",
+    "secretstorage>=3.5.0; sys_platform == 'linux'",
+]
 
 [project.scripts]
 igt = "igt.cli:main"
