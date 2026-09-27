@@ -13,3 +13,4 @@ cookies*.txt
 # local agent/tooling config — not project code.
 /.claude/
 /.mcp.json
+/.ignore
