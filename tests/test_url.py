@@ -14,6 +14,8 @@ from igt.url import parse_instagram_url
         ("https://www.instagram.com/some.user/reel/ABC123xyz/", "reel", "ABC123xyz"),
         ("  https://www.instagram.com/reel/ABC123xyz/  ", "reel", "ABC123xyz"),
         ("HTTPS://WWW.INSTAGRAM.COM/reel/ABC123xyz/", "reel", "ABC123xyz"),
+        ("https://www.instagram.com/reels/Ddv7x-Yso_r/", "reel", "Ddv7x-Yso_r"),
+        ("https://www.instagram.com/some.user/reels/ABC123xyz/", "reel", "ABC123xyz"),
     ],
 )
 def test_accepts_and_canonicalises(raw, kind, code):
@@ -31,6 +33,8 @@ def test_accepts_and_canonicalises(raw, kind, code):
         "https://www.instagram.com/someuser/",
         "https://www.instagram.com/stories/user/123/",
         "https://www.instagram.com/reel//",
+        "https://www.instagram.com/reels/",  # the Reels feed, not a single reel
+        "https://www.instagram.com/someuser/reels/",  # a profile's Reels tab
         "https://instagram.com.evil.com/reel/ABC/",
         "https://evilinstagram.com/reel/ABC/",
         "https://www.youtube.com/watch?v=abc",

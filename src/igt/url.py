@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 from igt.errors import InvalidUrlError
 
 _HOSTS = {"instagram.com", "www.instagram.com"}
-_PATH = re.compile(r"^/(?:[A-Za-z0-9._]+/)?(reel|p|tv)/([A-Za-z0-9_-]+)/?$")
+_PATH = re.compile(r"^/(?:[A-Za-z0-9._]+/)?(reels?|p|tv)/([A-Za-z0-9_-]+)/?$")
 
 
 @dataclass(frozen=True)
@@ -23,4 +23,5 @@ def parse_instagram_url(raw: str) -> ParsedUrl:
     if not match:
         raise InvalidUrlError(f"not a reel/post/tv URL: {raw!r}")
     kind, code = match.groups()
+    kind = "reel" if kind == "reels" else kind
     return ParsedUrl(kind, code, f"https://www.instagram.com/{kind}/{code}/")
