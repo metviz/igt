@@ -23,6 +23,7 @@ igt https://www.youtube.com/watch?v=dQw4w9WgXcQ                # or a YouTube vi
 igt https://www.facebook.com/reel/1234567890123456             # or a Facebook reel/video/fb.watch link
 igt https://www.tiktok.com/@someuser/video/7123456789012345678  # or a TikTok video/short link
 igt URL --format md                                            # txt | srt | json | md (markdown: source URL, metadata, caption, timestamped transcript)
+igt URL --format srt > captions.srt                            # numbered cues with HH:MM:SS,mmm timestamps
 igt URL --language hi --model small                            # skip auto-detect, bigger model
 igt URL --cookies-from firefox                                 # login-walled videos: use your browser session
 igt URL --cookies ~/secrets/instagram-cookies.txt              # ...or an exported cookies file (outside the repo)
