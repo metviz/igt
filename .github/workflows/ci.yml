@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - run: uv sync
+      - run: uv run pytest --cov=igt --cov-fail-under=80
+
+  live-smoke:
+    # Best-effort: hits a real Instagram URL, so it's flaky by nature (rate
+    # limits on shared runner IPs, yt-dlp extractor drift, the test video
+    # itself being deleted). Never blocks a push or PR.
+    runs-on: ubuntu-latest
+    needs: test
+    continue-on-error: true
+    env:
+      IGT_TEST_URL: https://www.instagram.com/reel/Ddv7x-Yso_r/
+      IGT_MODEL: tiny
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - run: uv sync
+      - run: uv run pytest -m integration -q

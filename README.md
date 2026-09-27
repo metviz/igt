@@ -1,5 +1,7 @@
 # igt — Instagram/YouTube/Facebook/TikTok transcript CLI
 
+[![CI](https://github.com/metviz/igt/actions/workflows/ci.yml/badge.svg)](https://github.com/metviz/igt/actions/workflows/ci.yml)
+
 Command-line counterpart of the Instagram Transcript Generator Chrome extension (a separate project). Downloads an
 Instagram reel/post's, YouTube video's, Facebook reel/video's or TikTok video's audio with
 [yt-dlp](https://github.com/yt-dlp/yt-dlp) and transcribes it locally with
@@ -79,6 +81,10 @@ Errors go to stderr as `error: <message>`; stdout carries only the result.
 uv run pytest --cov=igt                       # unit tests, no network
 IGT_TEST_URL=<public reel> uv run pytest -m integration   # opt-in live smoke test
 ```
+
+CI runs the unit tests on every push/PR (required) plus a live smoke test against a public
+Instagram reel (non-blocking: `continue-on-error`, since it depends on Instagram staying reachable
+and that specific reel staying up). See `.github/workflows/ci.yml`.
 
 yt-dlp's extractors for these sites break periodically (TikTok's most often); update with
 `uv lock --upgrade-package yt-dlp`.
