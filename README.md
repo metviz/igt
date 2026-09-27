@@ -13,6 +13,16 @@ uv sync
 uv run igt --help
 ```
 
+Without `uv`, use the pinned `requirements.txt` instead (regenerate it with
+`uv export --no-hashes --no-dev -o requirements.txt` after changing dependencies):
+
+```bash
+cd igt
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+igt --help
+```
+
 The first run downloads the Whisper model (`base` by default).
 
 ## Usage
