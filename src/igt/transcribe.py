@@ -26,8 +26,9 @@ class FasterWhisperTranscriber:
                 from faster_whisper import WhisperModel
 
                 factory = WhisperModel
-            # ponytail: int8 runs everywhere; expose --compute-type when a GPU is available.
-            self._model = factory(self._size, device="auto", compute_type="int8")
+            # ponytail: CPU+int8 runs everywhere; "auto" device picked a broken CUDA GPU.
+            # Expose --device/--compute-type if GPU speed is ever needed.
+            self._model = factory(self._size, device="cpu", compute_type="int8")
         return self._model
 
     def transcribe(self, audio: Path, language: str) -> tuple[tuple[Segment, ...], str]:

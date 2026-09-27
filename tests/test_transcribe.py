@@ -61,6 +61,12 @@ def test_model_loaded_once_lazily():
     assert len(built) == 1 and built[0][0] == "tiny"
 
 
+def test_model_pinned_to_cpu_int8_so_a_broken_gpu_is_never_picked():
+    t, built = make(FakeModel())
+    t.transcribe(Path("a"), "auto")
+    assert built[0][1] == {"device": "cpu", "compute_type": "int8"}
+
+
 def test_decode_error_during_iteration_becomes_transcribe_error():
     t, _ = make(FakeModel([(0, 1, "x")], raises=RuntimeError("bad audio")))
     with pytest.raises(TranscribeError, match="bad audio"):
