@@ -109,3 +109,37 @@ def test_login_hint_mentions_cookies_from(tmp_path):
     boom = yt_dlp.utils.DownloadError("ERROR: Login required")
     with pytest.raises(DownloadError, match="--cookies-from"):
         YtDlpDownloader(ydl_factory=factory(raises=boom)).fetch("https://u", tmp_path)
+
+
+def test_metadata_extracted(tmp_path):
+    info = {
+        **video(),
+        "uploader": "alice",
+        "upload_date": "20260927",
+        "duration": 32.5,
+        "description": "Hi #a #b",
+    }
+    got = YtDlpDownloader(ydl_factory=factory(info)).fetch("https://u", tmp_path)
+    assert (got.creator, got.upload_date, got.duration, got.caption) == (
+        "alice",
+        "2026-09-27",
+        32.5,
+        "Hi #a #b",
+    )
+
+
+def test_channel_is_creator_fallback(tmp_path):
+    info = {**video(), "channel": "bob"}
+    got = YtDlpDownloader(ydl_factory=factory(info)).fetch("https://u", tmp_path)
+    assert got.creator == "bob"
+
+
+def test_missing_or_malformed_metadata_defaults(tmp_path):
+    info = {**video(), "upload_date": "bad", "duration": "x", "uploader": None}
+    got = YtDlpDownloader(ydl_factory=factory(info)).fetch("https://u", tmp_path)
+    assert (got.creator, got.upload_date, got.duration, got.caption) == (
+        "",
+        "",
+        None,
+        "",
+    )

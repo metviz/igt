@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Protocol
 
@@ -9,6 +10,10 @@ from igt.errors import DownloadError
 class Downloaded:
     audio_path: Path
     title: str
+    creator: str = ""
+    upload_date: str = ""
+    duration: float | None = None
+    caption: str = ""
 
 
 class Downloader(Protocol):
@@ -26,8 +31,32 @@ def _first_download(info: dict | None) -> Downloaded | None:
         return None
     downloads = info.get("requested_downloads")
     if downloads:
-        return Downloaded(Path(downloads[0]["filepath"]), info.get("title") or "")
+        return Downloaded(
+            Path(downloads[0]["filepath"]),
+            info.get("title") or "",
+            creator=_text(info.get("uploader")) or _text(info.get("channel")),
+            upload_date=_iso_date(info.get("upload_date")),
+            duration=_seconds(info.get("duration")),
+            caption=_text(info.get("description")),
+        )
     return None
+
+
+def _text(value: Any) -> str:
+    return value if isinstance(value, str) else ""
+
+
+def _iso_date(value: Any) -> str:
+    """yt-dlp gives YYYYMMDD; anything else becomes ''."""
+    try:
+        return datetime.strptime(value, "%Y%m%d").date().isoformat()
+    except (TypeError, ValueError):
+        return ""
+
+
+def _seconds(value: Any) -> float | None:
+    ok = isinstance(value, (int, float)) and not isinstance(value, bool)
+    return float(value) if ok else None
 
 
 def _explain(message: str) -> str:

@@ -1,3 +1,4 @@
+import re
 import tempfile
 from pathlib import Path
 
@@ -23,5 +24,15 @@ def generate(
     if not any(s.text.strip() for s in segments):
         raise NoSpeechError("no speech detected in this video (music-only or silent)")
     return Transcript(
-        "instagram", downloaded.title, "local-whisper", detected, segments
+        "instagram",
+        downloaded.title,
+        "local-whisper",
+        detected,
+        segments,
+        url=parsed.canonical,
+        creator=downloaded.creator,
+        upload_date=downloaded.upload_date,
+        duration=downloaded.duration,
+        caption=downloaded.caption,
+        hashtags=tuple(dict.fromkeys(re.findall(r"#(\w+)", downloaded.caption))),
     )

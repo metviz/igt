@@ -15,3 +15,9 @@ class Transcript:
     source: str
     language: str
     segments: tuple[Segment, ...]
+    url: str = ""
+    creator: str = ""
+    upload_date: str = ""  # ISO 8601 date, e.g. 2026-09-27
+    duration: float | None = None  # seconds
+    caption: str = ""
+    hashtags: tuple[str, ...] = ()

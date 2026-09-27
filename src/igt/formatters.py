@@ -34,6 +34,12 @@ def to_json(t: Transcript) -> str:
             "title": t.title,
             "source": t.source,
             "language": t.language,
+            "url": t.url,
+            "creator": t.creator,
+            "upload_date": t.upload_date,
+            "duration": t.duration,
+            "caption": t.caption,
+            "hashtags": list(t.hashtags),
             "segments": [
                 {"start": s.start, "end": s.end, "text": s.text} for s in t.segments
             ],

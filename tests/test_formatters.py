@@ -41,3 +41,32 @@ def test_json_shape_mirrors_server_payload_and_keeps_unicode():
 
 def test_registry_keys():
     assert set(FORMATS) == {"txt", "srt", "json"}
+
+
+def test_json_includes_metadata():
+    t = Transcript(
+        "instagram",
+        "T",
+        "local-whisper",
+        "en",
+        (Segment(0, 1, "x"),),
+        url="https://www.instagram.com/reel/A/",
+        creator="alice",
+        upload_date="2026-09-27",
+        duration=32.5,
+        caption="Hi #a",
+        hashtags=("a",),
+    )
+    data = json.loads(to_json(t))
+    assert data["url"] == "https://www.instagram.com/reel/A/"
+    assert (data["creator"], data["upload_date"], data["duration"]) == (
+        "alice",
+        "2026-09-27",
+        32.5,
+    )
+    assert (data["caption"], data["hashtags"]) == ("Hi #a", ["a"])
+
+
+def test_json_metadata_defaults_when_absent():
+    data = json.loads(to_json(make(Segment(0, 1, "x"))))
+    assert (data["creator"], data["duration"], data["hashtags"]) == ("", None, [])

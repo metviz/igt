@@ -7,8 +7,13 @@ DEFAULT_SEGMENTS = (Segment(0, 1.5, "hello"), Segment(1.5, 3, "world"))
 
 
 class FakeDownloader:
-    def __init__(self, fail: Exception | None = None, title: str = "My reel"):
-        self.fail, self.title = fail, title
+    def __init__(
+        self,
+        fail: Exception | None = None,
+        title: str = "My reel",
+        meta: dict | None = None,
+    ):
+        self.fail, self.title, self.meta = fail, title, meta or {}
         self.url: str | None = None
         self.dest: Path | None = None
         self.calls = 0
@@ -20,7 +25,7 @@ class FakeDownloader:
             raise self.fail
         path = dest / "a.m4a"
         path.write_bytes(b"audio")
-        return Downloaded(path, self.title)
+        return Downloaded(path, self.title, **self.meta)
 
 
 class FakeTranscriber:

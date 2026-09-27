@@ -59,3 +59,22 @@ def test_music_only_video_is_no_speech_error(segments):
             downloader=FakeDownloader(),
             transcriber=FakeTranscriber(segments=segments),
         )
+
+
+def test_metadata_flows_into_transcript_with_deduped_hashtags():
+    meta = dict(
+        creator="alice",
+        upload_date="2026-09-27",
+        duration=32.5,
+        caption="Hi #Reels #tips #Reels!",
+    )
+    dl = FakeDownloader(meta=meta)
+    t = generate(URL, downloader=dl, transcriber=FakeTranscriber())
+    assert t.url == "https://www.instagram.com/reel/ABC123xyz/"
+    assert (t.creator, t.upload_date, t.duration, t.caption) == (
+        "alice",
+        "2026-09-27",
+        32.5,
+        "Hi #Reels #tips #Reels!",
+    )
+    assert t.hashtags == ("Reels", "tips")
