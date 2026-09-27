@@ -75,6 +75,12 @@ mutually exclusive; `--cookies-from` wins over `IGT_COOKIES_FILE`.
 
 Errors go to stderr as `error: <message>`; stdout carries only the result.
 
+## Versioning
+
+[SemVer](https://semver.org/): `MAJOR.MINOR.PATCH`. Currently `0.x` — no stability guarantees yet, a
+minor bump may still break things. `igt --version` reports the installed version; see
+[CHANGELOG.md](CHANGELOG.md) for what changed in each release.
+
 ## Development
 
 ```bash
