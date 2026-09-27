@@ -9,6 +9,10 @@ Instagram reel/post's, YouTube video's, Facebook reel/video's or TikTok video's 
 
 ## Install
 
+Requires [`ffmpeg`](https://ffmpeg.org/) on `PATH` (yt-dlp shells out to it for some audio
+extraction paths). Preinstalled on GitHub-hosted CI runners; elsewhere: `brew install ffmpeg`
+(macOS), `apt install ffmpeg` (Debian/Ubuntu).
+
 ```bash
 cd igt
 uv sync
