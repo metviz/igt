@@ -43,10 +43,32 @@ igt URL --format srt > captions.srt                            # numbered cues w
 igt URL --language hi --model small                            # skip auto-detect, bigger model
 igt URL --cookies-from firefox                                 # login-walled videos: use your browser session
 igt URL --cookies ~/secrets/instagram-cookies.txt              # ...or an exported cookies file (outside the repo)
-IGT_OUT_ROOT=~/transcripts igt URL --out --format srt          # writes ~/transcripts/ABC123xyz.srt
-igt URL --out-file projects.md --format md                     # writes ./projects.md (or $IGT_OUT_ROOT/projects.md)
-igt URL --out-file /abs/path/notes.md --format md             # absolute path, outside the repo
+igt URL --out --format srt                                    # writes ./ABC123xyz.srt (see Saving output)
+igt URL --out-file notes.md --format md                        # writes ./notes.md
 ```
+
+## Saving output
+
+By default the result goes to stdout. To write a file instead, use one of two options (mutually exclusive):
+
+| Option | Writes to |
+|---|---|
+| `--out` | `<shortcode>.<format>` (e.g. `ABC123xyz.md`) in the output directory |
+| `--out-file PATH` | `PATH`: relative to the output directory, or absolute |
+
+The output directory is `$IGT_OUT_ROOT` if set, otherwise the **current directory**. Missing parent
+directories are created, the path is printed on success, and nothing is downloaded if the destination
+is unwritable, a directory, or a symlink. It can never be inside this repository.
+
+```bash
+cd ~/notes
+igt URL --format md --out                      # ./<shortcode>.md
+igt URL --format md --out-file talk.md         # ./talk.md
+igt URL --format md --out-file ~/x/talk.md     # absolute path
+IGT_OUT_ROOT=~/transcripts igt URL --out       # ~/transcripts/<shortcode>.txt
+```
+
+Quote URLs containing `?` or `&` so the shell doesn't glob or background them.
 
 Accepted URLs: `instagram.com/(reel|p|tv)/<id>/` (optionally with a `/<username>/` prefix);
 `youtube.com/watch?v=<id>`, `youtube.com/shorts/<id>`, `youtu.be/<id>`; `facebook.com/reel/<id>/`,
@@ -58,10 +80,9 @@ parameters such as `?igsh=` or `&t=` are dropped.
 
 | Variable | Meaning |
 |---|---|
-| `IGT_OUT_ROOT` | Directory for `--out` / relative `--out-file`. Optional: defaults to the current directory. Must be outside this repository. |
+| `IGT_OUT_ROOT` | Output directory for `--out` and relative `--out-file`. Optional (default: current directory). Must be outside this repository. |
 | `IGT_COOKIES_FILE` | Netscape-format cookies file (same as `--cookies`). Must be outside this repository. |
 
-No output path may resolve inside the repo: if the current directory (the default) is inside it, `--out`/`--out-file` is an error.
 Cookies are credentials — keep the file out of the repo.
 
 ## Exit codes
@@ -70,7 +91,7 @@ Cookies are credentials — keep the file out of the repo.
 |---|---|
 | 0 | Transcript produced |
 | 2 | Bad URL or usage |
-| 3 | Configuration error (missing/forbidden path) |
+| 3 | Configuration error (forbidden/unwritable output path, missing cookies file) |
 | 4 | Download failed (login required, no video, rate limit, ...) |
 | 5 | Transcription failed, or no speech detected |
 | 130 | Interrupted (Ctrl-C) |
