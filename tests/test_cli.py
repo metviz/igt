@@ -50,10 +50,67 @@ def test_out_writes_file_named_by_shortcode_and_prints_path(tmp_path):
     assert target.read_text(encoding="utf-8").startswith("1\n")
 
 
-def test_out_without_root_fails_before_any_download():
+def test_out_file_relative_path_lands_under_out_root(tmp_path):
+    code, out, _ = run(
+        [URL, "--out-file", "projects.md"], env={"IGT_OUT_ROOT": str(tmp_path)}
+    )
+    target = tmp_path.resolve() / "projects.md"
+    assert code == 0 and out.strip() == str(target)
+    assert target.read_text(encoding="utf-8") == "hello\nworld\n"
+
+
+def test_out_file_relative_path_creates_subdirs(tmp_path):
+    code, _, _ = run(
+        [URL, "--out-file", "a/b.txt"], env={"IGT_OUT_ROOT": str(tmp_path)}
+    )
+    assert code == 0 and (tmp_path / "a" / "b.txt").is_file()
+
+
+def test_out_file_absolute_path_needs_no_out_root(tmp_path):
+    target = tmp_path / "x.txt"
+    code, out, _ = run([URL, "--out-file", str(target)])
+    assert code == 0 and out.strip() == str(target.resolve()) and target.is_file()
+
+
+def test_out_file_absolute_path_inside_repo_rejected_before_download():
+    dl = FakeDownloader()
+    code, _, err = run([URL, "--out-file", str(REPO_ROOT / "x.txt")], downloader=dl)
+    assert code == 3 and "inside the repository" in err and dl.calls == 0
+
+
+def test_out_file_relative_path_escaping_into_repo_rejected(tmp_path):
+    dl = FakeDownloader()
+    rel = os.path.relpath(REPO_ROOT / "x.txt", tmp_path)
+    code, _, err = run(
+        [URL, "--out-file", rel], env={"IGT_OUT_ROOT": str(tmp_path)}, downloader=dl
+    )
+    assert code == 3 and "inside the repository" in err and dl.calls == 0
+
+
+def test_out_file_relative_path_defaults_to_cwd(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    code, out, _ = run([URL, "--out-file", "p.md"])
+    assert code == 0 and out.strip() == str(tmp_path.resolve() / "p.md")
+    assert (tmp_path / "p.md").is_file()
+
+
+def test_out_file_existing_directory_refused(tmp_path):
+    dl = FakeDownloader()
+    code, _, err = run([URL, "--out-file", str(tmp_path)], downloader=dl)
+    assert code == 3 and "directory" in err and dl.calls == 0
+
+
+def test_out_without_root_defaults_to_cwd(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    code, out, _ = run([URL, "--format", "md", "--out"])
+    assert code == 0 and out.strip() == str(tmp_path.resolve() / "ABC123xyz.md")
+
+
+def test_out_without_root_and_cwd_inside_repo_fails_before_download(monkeypatch):
+    monkeypatch.chdir(REPO_ROOT)
     dl = FakeDownloader()
     code, out, err = run([URL, "--out"], downloader=dl)
-    assert code == 3 and out == "" and "IGT_OUT_ROOT" in err
+    assert code == 3 and out == "" and "inside the repository" in err
     assert dl.calls == 0
 
 
@@ -115,7 +172,12 @@ def test_out_root_is_a_file_fails_before_download(tmp_path):
     f.write_text("x")
     dl = FakeDownloader()
     code, _, err = run([URL, "--out"], env={"IGT_OUT_ROOT": str(f)}, downloader=dl)
-    assert code == 3 and err.startswith("error:") and "Traceback" not in err and dl.calls == 0
+    assert (
+        code == 3
+        and err.startswith("error:")
+        and "Traceback" not in err
+        and dl.calls == 0
+    )
 
 
 @pytest.mark.skipif(os.geteuid() == 0, reason="root ignores permission bits")
@@ -139,7 +201,12 @@ def test_symlinked_output_target_is_refused_not_followed(tmp_path):
     (root / "ABC123xyz.txt").symlink_to(victim)
     dl = FakeDownloader()
     code, _, err = run([URL, "--out"], env={"IGT_OUT_ROOT": str(root)}, downloader=dl)
-    assert code == 3 and "symlink" in err and victim.read_text() == "keep" and dl.calls == 0
+    assert (
+        code == 3
+        and "symlink" in err
+        and victim.read_text() == "keep"
+        and dl.calls == 0
+    )
 
 
 def test_missing_cookies_flag_file_rejected_and_not_created(tmp_path):
@@ -151,7 +218,9 @@ def test_missing_cookies_flag_file_rejected_and_not_created(tmp_path):
 
 def test_missing_cookies_env_file_rejected(tmp_path):
     dl = FakeDownloader()
-    code, _, err = run([URL], env={"IGT_COOKIES_FILE": str(tmp_path / "nope.txt")}, downloader=dl)
+    code, _, err = run(
+        [URL], env={"IGT_COOKIES_FILE": str(tmp_path / "nope.txt")}, downloader=dl
+    )
     assert code == 3 and "not found" in err and dl.calls == 0
 
 
@@ -208,10 +277,25 @@ def test_cookies_from_bad_usage_exits_2(argv):
 
 def test_md_format_to_stdout():
     _, out, _ = run([URL, "--format", "md"])
-    assert out.startswith("# My reel\n\nSource: https://www.instagram.com/reel/ABC123xyz/\n")
+    assert out.startswith(
+        "# My reel\n\nSource: https://www.instagram.com/reel/ABC123xyz/\n"
+    )
     assert out.endswith("## Transcript\n\n[00:00] hello\n[00:01] world\n")
 
 
 def test_md_out_file_extension(tmp_path):
-    code, out, _ = run([URL, "--out", "--format", "md"], env={"IGT_OUT_ROOT": str(tmp_path)})
+    code, out, _ = run(
+        [URL, "--out", "--format", "md"], env={"IGT_OUT_ROOT": str(tmp_path)}
+    )
     assert code == 0 and out.strip() == str(tmp_path.resolve() / "ABC123xyz.md")
+
+
+def test_out_flag_takes_no_value_so_url_may_follow_it(tmp_path):
+    code, out, _ = run(["--out", URL], env={"IGT_OUT_ROOT": str(tmp_path)})
+    assert code == 0 and out.strip() == str(tmp_path.resolve() / "ABC123xyz.txt")
+
+
+def test_out_and_out_file_are_mutually_exclusive(tmp_path):
+    with pytest.raises(SystemExit) as exc:
+        run([URL, "--out", "--out-file", str(tmp_path / "x.txt")])
+    assert exc.value.code == 2

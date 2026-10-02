@@ -22,10 +22,7 @@ def env_path(env: Mapping[str, str], name: str, forbidden: Path) -> Path | None:
     return outside(Path(value), forbidden, name) if value else None
 
 
-def require_out_root(env: Mapping[str, str], forbidden: Path) -> Path:
+def out_base(env: Mapping[str, str], forbidden: Path) -> Path:
+    """$IGT_OUT_ROOT if set, else the current directory; never inside the repo."""
     root = env_path(env, "IGT_OUT_ROOT", forbidden)
-    if root is None:
-        raise ConfigError(
-            "IGT_OUT_ROOT is not set; export it to a directory outside the repo to use --out"
-        )
-    return root
+    return root or outside(Path.cwd(), forbidden, "current directory")

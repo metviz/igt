@@ -44,6 +44,8 @@ igt URL --language hi --model small                            # skip auto-detec
 igt URL --cookies-from firefox                                 # login-walled videos: use your browser session
 igt URL --cookies ~/secrets/instagram-cookies.txt              # ...or an exported cookies file (outside the repo)
 IGT_OUT_ROOT=~/transcripts igt URL --out --format srt          # writes ~/transcripts/ABC123xyz.srt
+igt URL --out-file projects.md --format md                     # writes ./projects.md (or $IGT_OUT_ROOT/projects.md)
+igt URL --out-file /abs/path/notes.md --format md             # absolute path, outside the repo
 ```
 
 Accepted URLs: `instagram.com/(reel|p|tv)/<id>/` (optionally with a `/<username>/` prefix);
@@ -56,10 +58,10 @@ parameters such as `?igsh=` or `&t=` are dropped.
 
 | Variable | Meaning |
 |---|---|
-| `IGT_OUT_ROOT` | Directory for `--out`. **Required** with `--out`; must be outside this repository. |
+| `IGT_OUT_ROOT` | Directory for `--out` / relative `--out-file`. Optional: defaults to the current directory. Must be outside this repository. |
 | `IGT_COOKIES_FILE` | Netscape-format cookies file (same as `--cookies`). Must be outside this repository. |
 
-There are no path defaults inside the repo: an unset `IGT_OUT_ROOT` is an error, not a fallback.
+No output path may resolve inside the repo: if the current directory (the default) is inside it, `--out`/`--out-file` is an error.
 Cookies are credentials — keep the file out of the repo.
 
 ## Exit codes

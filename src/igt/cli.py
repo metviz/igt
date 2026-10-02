@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Mapping, Sequence, TextIO
 
 from igt import __version__
-from igt.config import REPO_ROOT, env_path, outside, require_out_root
+from igt.config import REPO_ROOT, env_path, outside, out_base
 from igt.download import Downloader, YtDlpDownloader
 from igt.errors import ConfigError, IgtError
 from igt.formatters import FORMATS
@@ -56,13 +56,35 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="BROWSER",
         help=f"read your logged-in session from a browser ({', '.join(BROWSERS)})",
     )
-    p.add_argument(
+    dest = p.add_mutually_exclusive_group()
+    dest.add_argument(
         "--out",
         action="store_true",
-        help="write to $IGT_OUT_ROOT/<shortcode>.<format> instead of stdout",
+        help="write to <shortcode>.<format> in $IGT_OUT_ROOT (default: current directory) instead of stdout",
+    )
+    dest.add_argument(
+        "--out-file",
+        metavar="PATH",
+        help=(
+            "write to PATH instead of stdout; relative to $IGT_OUT_ROOT (default: current directory), or absolute. "
+            "Must be outside the repo"
+        ),
     )
     p.add_argument("--version", action="version", version=f"igt {__version__}")
     return p
+
+
+def _resolve_out(
+    args: argparse.Namespace, env: Mapping[str, str], default_name: str
+) -> tuple[Path, str]:
+    """Split --out/--out-file into (directory, filename); always outside the repo."""
+    if args.out_file is None:
+        return out_base(env, REPO_ROOT), default_name
+    path = Path(args.out_file).expanduser()
+    if not path.is_absolute():
+        path = out_base(env, REPO_ROOT) / path
+    full = outside(path, REPO_ROOT, "--out-file")
+    return full.parent, full.name
 
 
 def _prepare_target(root: Path, name: str) -> Path:
@@ -74,6 +96,8 @@ def _prepare_target(root: Path, name: str) -> Path:
     if not os.access(root, os.W_OK):
         raise ConfigError(f"output directory is not writable: {root}")
     target = root / name
+    if target.is_dir():
+        raise ConfigError(f"output path is a directory: {target}")
     if target.is_symlink():  # write_text would follow it out of the guarded root
         raise ConfigError(f"refusing to write through symlink: {target}")
     return target
@@ -97,10 +121,11 @@ def _run(
         # yt-dlp would silently skip a missing file and then create it on exit
         raise ConfigError(f"cookies file not found: {cookies}")
     target = None
-    if args.out:  # resolve (and validate) the destination before the expensive work
-        target = _prepare_target(
-            require_out_root(env, REPO_ROOT), f"{parsed.shortcode}.{args.format}"
-        )
+    if (
+        args.out or args.out_file is not None
+    ):  # validate the destination before the expensive work
+        root, name = _resolve_out(args, env, f"{parsed.shortcode}.{args.format}")
+        target = _prepare_target(root, name)
     transcript = generate(
         args.url,
         downloader=downloader

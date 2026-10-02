@@ -24,7 +24,7 @@ src/igt/
   url.py         parse_video_url -> ParsedUrl (Instagram + YouTube + Facebook + TikTok; strict host allow-list, canonical URL)
   models.py      Segment, Transcript (frozen dataclasses)
   formatters.py  to_txt / to_srt / to_json / to_md, FORMATS registry
-  config.py      REPO_ROOT, outside(), env_path(), require_out_root() — the ONLY module that knows path policy
+  config.py      REPO_ROOT, outside(), env_path(), out_base() — the ONLY module that knows path policy
   download.py    Downloader protocol, YtDlpDownloader, Downloaded (audio path + metadata)
   transcribe.py  Transcriber protocol, FasterWhisperTranscriber (lazy model load)
   pipeline.py    generate(): parse -> download -> transcribe -> Transcript; temp dir always removed
@@ -38,8 +38,8 @@ Design: pure core + two I/O seams (`Downloader`, `Transcriber`) injected into `p
 
 ## Hard rules
 
-- **No path default may resolve inside this repo; an unset root is a hard failure, never a fallback.**
-  `--out` needs `IGT_OUT_ROOT` (outside the repo, no default). Cookies (`--cookies`, `IGT_COOKIES_FILE`) are
+- **No output path may resolve inside this repo.**
+  `--out`/relative `--out-file` use `IGT_OUT_ROOT`, else the current directory (changed 2026-10-02 at the user's request: was a hard failure when unset); either is rejected if inside the repo. Cookies (`--cookies`, `IGT_COOKIES_FILE`) are
   credentials: must exist and be outside the repo. Guarded by `config.outside()`; tests pin it.
 - Output is validated (dir creatable + writable, target not a symlink) **before** any download.
 - Secrets/cookies never go in the repo, argv values that are secrets, or git. `.gitignore` is defence in
