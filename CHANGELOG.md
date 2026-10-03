@@ -4,6 +4,21 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/) (`MAJOR.MINOR.PATCH`, 0.x = no stability guarantees yet).
 
+## [Unreleased]
+
+### Added
+- `--out-file PATH` writes the result to `PATH` (relative to the output directory, or absolute).
+  Mutually exclusive with `--out`.
+
+### Changed
+- The output directory for `--out` and relative `--out-file` is `$IGT_OUT_ROOT` if set, otherwise the
+  current directory. Previously an unset `IGT_OUT_ROOT` was a configuration error (exit 3). A directory
+  inside the repository is still rejected.
+- Output paths that are existing directories are now refused before any download.
+
+### Removed
+- Unused `litellm` dependency.
+
 ## [0.1.1] - 2026-09-27
 
 ### Added
@@ -29,5 +44,6 @@ Initial public release.
 - MIT license.
 - GitHub Actions CI: unit suite (required) plus a non-blocking live smoke test.
 
+[Unreleased]: https://github.com/metviz/igt/compare/v0.1.1...HEAD
 [0.1.1]: https://github.com/metviz/igt/releases/tag/v0.1.1
 [0.1.0]: https://github.com/metviz/igt/releases/tag/v0.1.0
