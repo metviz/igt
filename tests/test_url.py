@@ -190,6 +190,20 @@ from igt.url import parse_video_url
             "https://fb.watch/abcDEF12",
         ),
         (
+            "https://www.facebook.com/share/r/1Dydw754ZC/?mibextid=abc",
+            "facebook",
+            "reel",
+            "1Dydw754ZC",
+            "https://www.facebook.com/share/r/1Dydw754ZC/",
+        ),
+        (
+            "https://m.facebook.com/share/v/AbC123xyz",
+            "facebook",
+            "video",
+            "AbC123xyz",
+            "https://www.facebook.com/share/v/AbC123xyz/",
+        ),
+        (
             "https://www.tiktok.com/@someuser/video/7123456789012345678/",
             "tiktok",
             "video",

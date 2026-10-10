@@ -17,6 +17,9 @@ All notable changes to this project are documented here. Format follows
   `--ocr-merge {fuzzy,exact,off}` controls how repeated text is collapsed (default `fuzzy`).
   A silent video with readable on-screen text no longer fails with "no speech".
 
+### Fixed
+- Facebook share links (`facebook.com/share/r/<code>`, `/share/v/<code>`) are accepted.
+
 ### Changed
 - The output directory for `--out` and relative `--out-file` is `$IGT_OUT_ROOT` if set, otherwise the
   current directory. Previously an unset `IGT_OUT_ROOT` was a configuration error (exit 3). A directory

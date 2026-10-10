@@ -22,6 +22,9 @@ _FACEBOOK_HOSTS = {
 _FACEBOOK_SHORT_HOSTS = {"fb.watch"}
 _FACEBOOK_REEL_PATH = re.compile(r"^/reel/(\d+)/?$")
 _FACEBOOK_VIDEOS_PATH = re.compile(r"^/(?:[A-Za-z0-9.]+/)?videos/(\d+)/?$")
+_FACEBOOK_SHARE_PATH = re.compile(
+    r"^/share/([rv])/([A-Za-z0-9_-]+)/?$"
+)  # opaque; yt-dlp resolves it
 _FACEBOOK_WATCH_PATH = re.compile(r"^/watch/?$")
 _FACEBOOK_SHORT_ID = re.compile(
     r"[A-Za-z0-9]+"
@@ -96,6 +99,15 @@ def _parse_facebook(parts: ParseResult) -> ParsedUrl | None:
         code = reel.group(1)
         return ParsedUrl(
             "facebook", "reel", code, f"https://www.facebook.com/reel/{code}/"
+        )
+    share = _FACEBOOK_SHARE_PATH.match(parts.path)
+    if share:
+        kind, code = share.groups()
+        return ParsedUrl(
+            "facebook",
+            "reel" if kind == "r" else "video",
+            code,
+            f"https://www.facebook.com/share/{kind}/{code}/",
         )
     videos = _FACEBOOK_VIDEOS_PATH.match(parts.path)
     if videos:
