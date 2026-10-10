@@ -368,3 +368,22 @@ def test_ocr_every_must_be_positive():
     with pytest.raises(SystemExit) as e:
         run([URL, "--ocr", "--ocr-every", "0"])
     assert e.value.code == 2
+
+
+def test_ocr_merge_is_passed_to_default_extractor(monkeypatch):
+    seen = {}
+    monkeypatch.setattr(
+        "igt.cli.make_extractor",
+        lambda engine, every, merge: (
+            seen.update(a=(engine, every, merge))
+            or __import__("tests.fakes", fromlist=["x"]).FakeExtractor()
+        ),
+    )
+    code, _, _ = run([URL, "--ocr", "--ocr-merge", "off", "--ocr-every", "3"])
+    assert code == 0 and seen["a"] == ("tesseract", 3.0, "off")
+
+
+def test_ocr_merge_rejects_unknown_mode():
+    with pytest.raises(SystemExit) as e:
+        run([URL, "--ocr", "--ocr-merge", "wild"])
+    assert e.value.code == 2

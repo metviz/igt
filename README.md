@@ -52,7 +52,7 @@ igt URL --ocr --format md                                      # also read on-sc
 ## On-screen text (OCR)
 
 `--ocr` downloads the video (up to 720p), samples a frame every `--ocr-every SECONDS` (default 2),
-and reads each frame with an OCR engine. Identical consecutive text is collapsed. Results appear in
+and reads each frame with an OCR engine. Repeated on-screen text is merged (`--ocr-merge fuzzy`, the default, tolerates OCR jitter and keeps the fullest version of text being revealed; `exact` merges identical text only; `off` keeps every sampled frame). Results appear in
 `--format md` (an "On-screen text" section) and `--format json` (`on_screen`); `txt` and `srt` are
 unchanged. A video with no speech but readable on-screen text succeeds. Not combinable with `--mp3`.
 

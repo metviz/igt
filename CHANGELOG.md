@@ -14,6 +14,7 @@ All notable changes to this project are documented here. Format follows
 - `--ocr` reads on-screen text from sampled video frames (`--ocr-every SECONDS`, default 2) and adds it
   to `md` ("On-screen text" section) and `json` (`on_screen`). Engines via `--ocr-engine`: `tesseract`
   (default, system binary) or `rapidocr` (optional extra: `pip install 'igt[rapidocr]'`).
+  `--ocr-merge {fuzzy,exact,off}` controls how repeated text is collapsed (default `fuzzy`).
   A silent video with readable on-screen text no longer fails with "no speech".
 
 ### Changed

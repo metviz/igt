@@ -9,7 +9,7 @@ from igt.config import REPO_ROOT, env_path, outside, out_base
 from igt.download import Downloader, YtDlpDownloader
 from igt.errors import ConfigError, IgtError
 from igt.formatters import FORMATS
-from igt.ocr import ENGINES, TextExtractor, make_extractor
+from igt.ocr import ENGINES, MERGE_MODES, TextExtractor, make_extractor
 from igt.pipeline import generate, save_audio
 from igt.transcribe import FasterWhisperTranscriber, Transcriber
 from igt.url import parse_video_url
@@ -99,6 +99,15 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="SECONDS",
         help="seconds between sampled frames (default: 2)",
     )
+    p.add_argument(
+        "--ocr-merge",
+        choices=MERGE_MODES,
+        default="fuzzy",
+        help=(
+            "collapse repeated on-screen text: fuzzy (default, tolerates OCR jitter), "
+            "exact (identical text only), off (every sampled frame)"
+        ),
+    )
     p.add_argument("--version", action="version", version=f"igt {__version__}")
     return p
 
@@ -170,7 +179,9 @@ def _run(
         stdout.write(f"{target}\n")
         return
     if args.ocr:
-        extractor = extractor or make_extractor(args.ocr_engine, args.ocr_every)
+        extractor = extractor or make_extractor(
+            args.ocr_engine, args.ocr_every, args.ocr_merge
+        )
         if hasattr(extractor, "check"):
             extractor.check()  # fail fast, before the download
     else:

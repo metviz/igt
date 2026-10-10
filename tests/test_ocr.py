@@ -25,8 +25,11 @@ class Runner:
         return subprocess.CompletedProcess(cmd, 0, self.texts.pop(0), "")
 
 
-def ex(texts, every=2.0, which=lambda n: f"/usr/bin/{n}", **kw):
-    return TesseractExtractor(every=every, runner=Runner(texts, **kw), which=which)
+def ex(texts, every=2.0, which=lambda n: f"/usr/bin/{n}", merge="fuzzy", **kw):
+    return TesseractExtractor(
+        every=every, merge=merge, runner=Runner(texts, **kw), which=which
+    )
+
 
 
 def video(tmp_path):
@@ -93,3 +96,46 @@ def test_rapidocr_missing_package_is_config_error(monkeypatch):
     monkeypatch.setitem(sys.modules, "rapidocr_onnxruntime", None)
     with pytest.raises(ConfigError, match="igt\\[rapidocr\\]"):
         RapidOcrExtractor(which=lambda n: "/x").check()
+
+
+def test_near_duplicates_from_ocr_jitter_collapse(tmp_path):
+    base = "Weak vs Strong College Essay Sentences I never planned on becoming the translator"
+    out = ex(
+        [
+            base,
+            base.replace("planned", "plannedion"),
+            base.replace("Essay", "Essay ~h"),
+            "Totally different slide text",
+        ]
+    ).extract(video(tmp_path))
+    assert [o.start for o in out] == [0.0, 6.0]
+
+
+def test_progressively_revealed_text_keeps_longest_version(tmp_path):
+    out = ex(
+        ["Step one of the plan", "Step one of the plan is simple and clear"]
+    ).extract(video(tmp_path))
+    assert [(o.start, o.text) for o in out] == [
+        (0.0, "Step one of the plan is simple and clear")
+    ]
+
+
+JITTER = [
+    "Weak vs Strong College Essay Sentences",
+    "Weak vs Strong College Essay Sentence5",
+    "Weak vs Strong College Essay Sentences",
+]
+
+
+def test_exact_mode_keeps_jitter_variants_but_drops_identical(tmp_path):
+    out = ex(JITTER, merge="exact").extract(video(tmp_path))
+    assert [o.start for o in out] == [0.0, 2.0, 4.0]
+    out = ex(["Same text", "same TEXT", "Other text"], merge="exact").extract(
+        video(tmp_path)
+    )
+    assert [o.start for o in out] == [0.0, 4.0]
+
+
+def test_off_mode_keeps_every_frame(tmp_path):
+    out = ex(["Same text"] * 3, merge="off").extract(video(tmp_path))
+    assert [o.start for o in out] == [0.0, 2.0, 4.0]
