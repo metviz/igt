@@ -9,6 +9,8 @@ All notable changes to this project are documented here. Format follows
 ### Added
 - `--out-file PATH` writes the result to `PATH` (relative to the output directory, or absolute).
   Mutually exclusive with `--out`.
+- `--mp3` saves the audio as `<shortcode>.mp3` (or `--out-file PATH`) instead of transcribing.
+  Requires `ffmpeg`; `--format` is ignored.
 
 ### Changed
 - The output directory for `--out` and relative `--out-file` is `$IGT_OUT_ROOT` if set, otherwise the
