@@ -86,10 +86,12 @@ class YtDlpDownloader:
         cookies_file: Path | None = None,
         ydl_factory: Callable[[dict], Any] | None = None,
         cookies_from_browser: str | None = None,
+        mp3: bool = False,
     ):
         self._cookies = cookies_file
         self._factory = ydl_factory
         self._browser = cookies_from_browser
+        self._mp3 = mp3
 
     def fetch(self, url: str, dest: Path) -> Downloaded:
         import yt_dlp
@@ -103,6 +105,10 @@ class YtDlpDownloader:
             "no_color": True,
             "logger": _SilentLogger(),  # quiet=True still prints ERROR lines; igt owns stderr
         }
+        if self._mp3:  # needs ffmpeg on PATH
+            opts["postprocessors"] = [
+                {"key": "FFmpegExtractAudio", "preferredcodec": "mp3"}
+            ]
         if self._browser:
             opts["cookiesfrombrowser"] = (self._browser,)
         elif self._cookies:

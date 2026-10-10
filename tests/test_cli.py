@@ -299,3 +299,41 @@ def test_out_and_out_file_are_mutually_exclusive(tmp_path):
     with pytest.raises(SystemExit) as exc:
         run([URL, "--out", "--out-file", str(tmp_path / "x.txt")])
     assert exc.value.code == 2
+
+
+class Mp3Downloader(FakeDownloader):
+    def fetch(self, url, dest):
+        got = super().fetch(url, dest)
+        mp3 = dest / "a.mp3"
+        mp3.write_bytes(b"mp3data")
+        return type(got)(mp3, got.title)
+
+
+def test_mp3_saves_audio_and_skips_transcription(tmp_path):
+    tr = FakeTranscriber()
+    code, out, _ = run(
+        [URL, "--mp3"],
+        env={"IGT_OUT_ROOT": str(tmp_path)},
+        downloader=Mp3Downloader(),
+        transcriber=tr,
+    )
+    target = tmp_path.resolve() / "ABC123xyz.mp3"
+    assert code == 0 and out.strip() == str(target)
+    assert target.read_bytes() == b"mp3data" and tr.seen_language is None
+
+
+def test_mp3_honours_out_file(tmp_path):
+    code, out, _ = run(
+        [URL, "--mp3", "--out-file", "song.mp3"],
+        env={"IGT_OUT_ROOT": str(tmp_path)},
+        downloader=Mp3Downloader(),
+    )
+    assert code == 0 and (tmp_path / "song.mp3").read_bytes() == b"mp3data"
+
+
+def test_mp3_inside_repo_rejected_before_download():
+    dl = Mp3Downloader()
+    code, _, err = run(
+        [URL, "--mp3", "--out-file", str(REPO_ROOT / "x.mp3")], downloader=dl
+    )
+    assert code == 3 and dl.calls == 0

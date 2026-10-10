@@ -9,7 +9,7 @@ from igt.config import REPO_ROOT, env_path, outside, out_base
 from igt.download import Downloader, YtDlpDownloader
 from igt.errors import ConfigError, IgtError
 from igt.formatters import FORMATS
-from igt.pipeline import generate
+from igt.pipeline import generate, save_audio
 from igt.transcribe import FasterWhisperTranscriber, Transcriber
 from igt.url import parse_video_url
 
@@ -70,6 +70,11 @@ def build_parser() -> argparse.ArgumentParser:
             "Must be outside the repo"
         ),
     )
+    p.add_argument(
+        "--mp3",
+        action="store_true",
+        help="save the audio as <shortcode>.mp3 (or --out-file PATH) instead of transcribing; needs ffmpeg",
+    )
     p.add_argument("--version", action="version", version=f"igt {__version__}")
     return p
 
@@ -122,10 +127,23 @@ def _run(
         raise ConfigError(f"cookies file not found: {cookies}")
     target = None
     if (
-        args.out or args.out_file is not None
+        args.out or args.mp3 or args.out_file is not None
     ):  # validate the destination before the expensive work
-        root, name = _resolve_out(args, env, f"{parsed.shortcode}.{args.format}")
+        ext = "mp3" if args.mp3 else args.format
+        root, name = _resolve_out(args, env, f"{parsed.shortcode}.{ext}")
         target = _prepare_target(root, name)
+    if args.mp3:
+        assert target is not None
+        save_audio(
+            args.url,
+            downloader=downloader
+            or YtDlpDownloader(
+                cookies, cookies_from_browser=args.cookies_from, mp3=True
+            ),
+            target=target,
+        )
+        stdout.write(f"{target}\n")
+        return
     transcript = generate(
         args.url,
         downloader=downloader

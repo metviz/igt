@@ -55,6 +55,7 @@ By default the result goes to stdout. To write a file instead, use one of two op
 |---|---|
 | `--out` | `<shortcode>.<format>` (e.g. `ABC123xyz.md`) in the output directory |
 | `--out-file PATH` | `PATH`: relative to the output directory, or absolute |
+| `--mp3` | audio only, no transcription: `<shortcode>.mp3` (or `--out-file PATH`) in the output directory; needs `ffmpeg` |
 
 The output directory is `$IGT_OUT_ROOT` if set, otherwise the **current directory**. Missing parent
 directories are created, the path is printed on success, and nothing is downloaded if the destination

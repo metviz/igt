@@ -1,4 +1,5 @@
 import re
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -36,3 +37,11 @@ def generate(
         caption=downloaded.caption,
         hashtags=tuple(dict.fromkeys(re.findall(r"#(\w+)", downloaded.caption))),
     )
+
+
+def save_audio(url: str, *, downloader: Downloader, target: Path) -> None:
+    """Download the audio (already mp3 from the downloader) and copy it to target."""
+    parsed = parse_video_url(url)
+    with tempfile.TemporaryDirectory(prefix="igt-") as tmp:
+        downloaded = downloader.fetch(parsed.canonical, Path(tmp))
+        shutil.copyfile(downloaded.audio_path, target)

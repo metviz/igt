@@ -143,3 +143,18 @@ def test_missing_or_malformed_metadata_defaults(tmp_path):
         None,
         "",
     )
+
+
+def test_mp3_adds_ffmpeg_extract_audio_postprocessor(tmp_path):
+    seen = {}
+    YtDlpDownloader(ydl_factory=factory(video(), seen=seen), mp3=True).fetch(
+        "https://u", tmp_path
+    )
+    pp = seen["postprocessors"][0]
+    assert pp["key"] == "FFmpegExtractAudio" and pp["preferredcodec"] == "mp3"
+
+
+def test_no_postprocessors_by_default(tmp_path):
+    seen = {}
+    YtDlpDownloader(ydl_factory=factory(video(), seen=seen)).fetch("https://u", tmp_path)
+    assert "postprocessors" not in seen
