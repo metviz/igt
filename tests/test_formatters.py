@@ -110,3 +110,28 @@ def test_md_title_is_one_line_and_has_a_fallback():
     assert to_md(t).startswith("# Line one line two\n")
     blank = Transcript("instagram", " ", "s", "", (Segment(0, 1, "x"),))
     assert to_md(blank).startswith("# Video transcript\n")
+
+
+def make_ocr():
+    from igt.models import OnScreenText
+
+    return Transcript(
+        "instagram", "T", "local-whisper", "en", (Segment(0, 1, "hi"),),
+        on_screen=(OnScreenText(3.0, "SALE 50%"),),
+    )
+
+
+def test_json_includes_on_screen():
+    data = json.loads(to_json(make_ocr()))
+    assert data["on_screen"] == [{"start": 3.0, "text": "SALE 50%"}]
+    assert json.loads(to_json(make()))["on_screen"] == []
+
+
+def test_md_has_on_screen_section_only_when_present():
+    assert "## On-screen text\n\n[00:03] SALE 50%" in to_md(make_ocr())
+    assert "On-screen" not in to_md(make(Segment(0, 1, "hi")))
+
+
+def test_txt_and_srt_ignore_on_screen():
+    t = make_ocr()
+    assert to_txt(t) == "hi" and "SALE" not in to_srt(t)

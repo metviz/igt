@@ -9,6 +9,12 @@ class Segment:
 
 
 @dataclass(frozen=True)
+class OnScreenText:
+    start: float
+    text: str
+
+
+@dataclass(frozen=True)
 class Transcript:
     platform: str
     title: str
@@ -21,3 +27,4 @@ class Transcript:
     duration: float | None = None  # seconds
     caption: str = ""
     hashtags: tuple[str, ...] = ()
+    on_screen: tuple[OnScreenText, ...] = ()

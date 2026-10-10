@@ -78,3 +78,30 @@ def test_metadata_flows_into_transcript_with_deduped_hashtags():
         "Hi #Reels #tips #Reels!",
     )
     assert t.hashtags == ("Reels", "tips")
+
+
+def test_extractor_sees_downloaded_media_and_result_lands_on_transcript():
+    from tests.fakes import FakeExtractor
+
+    ex = FakeExtractor([(1.0, "SALE")])
+    dl = FakeDownloader()
+    t = generate(URL, downloader=dl, transcriber=FakeTranscriber(), extractor=ex)
+    assert [(o.start, o.text) for o in t.on_screen] == [(1.0, "SALE")]
+    assert ex.video.name == "a.m4a" and not dl.dest.exists()
+
+
+def test_no_extractor_means_no_on_screen():
+    t = generate(URL, downloader=FakeDownloader(), transcriber=FakeTranscriber())
+    assert t.on_screen == ()
+
+
+def test_silent_video_with_on_screen_text_is_not_an_error():
+    from tests.fakes import FakeExtractor
+
+    t = generate(
+        URL,
+        downloader=FakeDownloader(),
+        transcriber=FakeTranscriber(segments=()),
+        extractor=FakeExtractor([(0.0, "ONLY TEXT")]),
+    )
+    assert t.segments == () and t.on_screen[0].text == "ONLY TEXT"

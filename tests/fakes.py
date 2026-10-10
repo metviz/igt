@@ -44,3 +44,21 @@ class FakeTranscriber:
         if self.raises:
             raise self.raises
         return self.segments, self.language
+
+
+class FakeExtractor:
+    def __init__(self, items=(), raises: Exception | None = None):
+        from igt.models import OnScreenText
+
+        self.items = tuple(OnScreenText(t, x) for t, x in items)
+        self.raises = raises
+        self.video: Path | None = None
+        self.calls = 0
+
+    def extract(self, video: Path):
+        assert video.exists(), "video must exist while extracting"
+        self.calls += 1
+        self.video = video
+        if self.raises:
+            raise self.raises
+        return self.items

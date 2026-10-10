@@ -9,6 +9,7 @@ from igt.config import REPO_ROOT, env_path, outside, out_base
 from igt.download import Downloader, YtDlpDownloader
 from igt.errors import ConfigError, IgtError
 from igt.formatters import FORMATS
+from igt.ocr import ENGINES, TextExtractor, make_extractor
 from igt.pipeline import generate, save_audio
 from igt.transcribe import FasterWhisperTranscriber, Transcriber
 from igt.url import parse_video_url
@@ -24,6 +25,16 @@ BROWSERS = (
     "vivaldi",
     "safari",
 )
+
+
+def _positive_float(value: str) -> float:
+    try:
+        number = float(value)
+    except ValueError:
+        number = 0.0
+    if not number > 0:
+        raise argparse.ArgumentTypeError(f"must be a positive number: {value!r}")
+    return number
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -75,6 +86,19 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="save the audio as <shortcode>.mp3 (or --out-file PATH) instead of transcribing; needs ffmpeg",
     )
+    p.add_argument(
+        "--ocr",
+        action="store_true",
+        help="also read on-screen text from video frames (md/json output); needs ffmpeg + an OCR engine",
+    )
+    p.add_argument("--ocr-engine", choices=ENGINES, default="tesseract")
+    p.add_argument(
+        "--ocr-every",
+        type=_positive_float,
+        default=2.0,
+        metavar="SECONDS",
+        help="seconds between sampled frames (default: 2)",
+    )
     p.add_argument("--version", action="version", version=f"igt {__version__}")
     return p
 
@@ -113,6 +137,7 @@ def _run(
     env: Mapping[str, str],
     downloader: Downloader | None,
     transcriber: Transcriber | None,
+    extractor: TextExtractor | None,
     stdout: TextIO,
 ) -> None:
     parsed = parse_video_url(args.url)
@@ -144,10 +169,21 @@ def _run(
         )
         stdout.write(f"{target}\n")
         return
+    if args.ocr:
+        extractor = extractor or make_extractor(args.ocr_engine, args.ocr_every)
+        if hasattr(extractor, "check"):
+            extractor.check()  # fail fast, before the download
+    else:
+        extractor = None
     transcript = generate(
         args.url,
         downloader=downloader
-        or YtDlpDownloader(cookies, cookies_from_browser=args.cookies_from),
+        or YtDlpDownloader(
+            cookies,
+            cookies_from_browser=args.cookies_from,
+            **({"video": True} if args.ocr else {}),
+        ),
+        extractor=extractor,
         transcriber=transcriber or FasterWhisperTranscriber(args.model),
         language=args.language,
     )
@@ -168,14 +204,18 @@ def main(
     env: Mapping[str, str] | None = None,
     downloader: Downloader | None = None,
     transcriber: Transcriber | None = None,
+    extractor: TextExtractor | None = None,
     stdout: TextIO | None = None,
     stderr: TextIO | None = None,
 ) -> int:
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.ocr and args.mp3:
+        parser.error("--ocr cannot be combined with --mp3")
     env = os.environ if env is None else env
     stdout, stderr = stdout or sys.stdout, stderr or sys.stderr
     try:
-        _run(args, env, downloader, transcriber, stdout)
+        _run(args, env, downloader, transcriber, extractor, stdout)
         return 0
     except IgtError as exc:
         stderr.write(f"error: {exc}\n")

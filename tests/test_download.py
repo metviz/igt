@@ -158,3 +158,11 @@ def test_no_postprocessors_by_default(tmp_path):
     seen = {}
     YtDlpDownloader(ydl_factory=factory(video(), seen=seen)).fetch("https://u", tmp_path)
     assert "postprocessors" not in seen
+
+
+def test_video_mode_requests_a_video_format(tmp_path):
+    seen = {}
+    YtDlpDownloader(ydl_factory=factory(video(), seen=seen), video=True).fetch(
+        "https://u", tmp_path
+    )
+    assert "bestaudio" not in seen["format"] and "best" in seen["format"]

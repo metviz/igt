@@ -11,6 +11,10 @@ All notable changes to this project are documented here. Format follows
   Mutually exclusive with `--out`.
 - `--mp3` saves the audio as `<shortcode>.mp3` (or `--out-file PATH`) instead of transcribing.
   Requires `ffmpeg`; `--format` is ignored.
+- `--ocr` reads on-screen text from sampled video frames (`--ocr-every SECONDS`, default 2) and adds it
+  to `md` ("On-screen text" section) and `json` (`on_screen`). Engines via `--ocr-engine`: `tesseract`
+  (default, system binary) or `rapidocr` (optional extra: `pip install 'igt[rapidocr]'`).
+  A silent video with readable on-screen text no longer fails with "no speech".
 
 ### Changed
 - The output directory for `--out` and relative `--out-file` is `$IGT_OUT_ROOT` if set, otherwise the

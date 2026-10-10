@@ -13,13 +13,14 @@ from tests.fakes import FakeDownloader, FakeTranscriber
 URL = "https://www.instagram.com/reel/ABC123xyz/"
 
 
-def run(argv, env=None, downloader=None, transcriber=None):
+def run(argv, env=None, downloader=None, transcriber=None, extractor=None):
     out, err = io.StringIO(), io.StringIO()
     code = main(
         argv,
         env=env or {},
         downloader=downloader or FakeDownloader(),
         transcriber=transcriber or FakeTranscriber(),
+        extractor=extractor,
         stdout=out,
         stderr=err,
     )
@@ -337,3 +338,33 @@ def test_mp3_inside_repo_rejected_before_download():
         [URL, "--mp3", "--out-file", str(REPO_ROOT / "x.mp3")], downloader=dl
     )
     assert code == 3 and dl.calls == 0
+
+
+def test_ocr_adds_on_screen_section_and_checks_tools_first():
+    from tests.fakes import FakeExtractor
+
+    ex = FakeExtractor([(2.0, "SALE")])
+    code, out, _ = run([URL, "--ocr", "--format", "md"], extractor=ex)
+    assert code == 0 and "## On-screen text\n\n[00:02] SALE" in out
+
+
+def test_ocr_failure_maps_to_exit_code():
+    from igt.errors import ConfigError
+    from tests.fakes import FakeExtractor
+
+    code, _, err = run(
+        [URL, "--ocr"], extractor=FakeExtractor(raises=ConfigError("no tesseract"))
+    )
+    assert code == 3 and "no tesseract" in err
+
+
+def test_ocr_with_mp3_is_usage_error():
+    with pytest.raises(SystemExit) as e:
+        run([URL, "--ocr", "--mp3"])
+    assert e.value.code == 2
+
+
+def test_ocr_every_must_be_positive():
+    with pytest.raises(SystemExit) as e:
+        run([URL, "--ocr", "--ocr-every", "0"])
+    assert e.value.code == 2

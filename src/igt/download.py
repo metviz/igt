@@ -87,17 +87,19 @@ class YtDlpDownloader:
         ydl_factory: Callable[[dict], Any] | None = None,
         cookies_from_browser: str | None = None,
         mp3: bool = False,
+        video: bool = False,
     ):
         self._cookies = cookies_file
         self._factory = ydl_factory
         self._browser = cookies_from_browser
         self._mp3 = mp3
+        self._video = video
 
     def fetch(self, url: str, dest: Path) -> Downloaded:
         import yt_dlp
 
         opts: dict[str, Any] = {
-            "format": "bestaudio/best",
+            "format": "best[height<=720]/best" if self._video else "bestaudio/best",
             "outtmpl": str(dest / "%(id)s.%(ext)s"),
             "noplaylist": True,
             "quiet": True,

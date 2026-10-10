@@ -43,6 +43,7 @@ def to_json(t: Transcript) -> str:
             "segments": [
                 {"start": s.start, "end": s.end, "text": s.text} for s in t.segments
             ],
+            "on_screen": [{"start": o.start, "text": o.text} for o in t.on_screen],
             "formats": {"txt": to_txt(t)},
         },
         ensure_ascii=False,
@@ -77,6 +78,9 @@ def to_md(t: Transcript) -> str:
         f"[{_clock(s.start)}] {s.text.strip()}" for s in t.segments if s.text.strip()
     ]
     parts.append("## Transcript\n\n" + "\n".join(cues))
+    if t.on_screen:
+        shown = [f"[{_clock(o.start)}] {o.text}" for o in t.on_screen]
+        parts.append("## On-screen text\n\n" + "\n".join(shown))
     return "\n\n".join(parts) + "\n"
 
 

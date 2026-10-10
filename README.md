@@ -45,7 +45,24 @@ igt URL --cookies-from firefox                                 # login-walled vi
 igt URL --cookies ~/secrets/instagram-cookies.txt              # ...or an exported cookies file (outside the repo)
 igt URL --out --format srt                                    # writes ./ABC123xyz.srt (see Saving output)
 igt URL --out-file notes.md --format md                        # writes ./notes.md
+igt URL --mp3                                                  # audio only: writes ./ABC123xyz.mp3, no transcription
+igt URL --ocr --format md                                      # also read on-screen text (see On-screen text)
 ```
+
+## On-screen text (OCR)
+
+`--ocr` downloads the video (up to 720p), samples a frame every `--ocr-every SECONDS` (default 2),
+and reads each frame with an OCR engine. Identical consecutive text is collapsed. Results appear in
+`--format md` (an "On-screen text" section) and `--format json` (`on_screen`); `txt` and `srt` are
+unchanged. A video with no speech but readable on-screen text succeeds. Not combinable with `--mp3`.
+
+| `--ocr-engine` | Install | Notes |
+|---|---|---|
+| `tesseract` (default) | `apt install tesseract-ocr` / `brew install tesseract` | no Python dependency; noisy on stylised captions |
+| `rapidocr` | `pip install 'igt[rapidocr]'` | much cleaner on social-video text; about 50 MB |
+
+Both need `ffmpeg`. A missing tool exits 3 before anything is downloaded. Sampling is uncapped, so a
+small `--ocr-every` on a long video produces many frames.
 
 ## Saving output
 
