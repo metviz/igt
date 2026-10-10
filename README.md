@@ -58,8 +58,8 @@ unchanged. A video with no speech but readable on-screen text succeeds. Not comb
 
 | `--ocr-engine` | Install | Notes |
 |---|---|---|
-| `tesseract` (default) | `apt install tesseract-ocr` / `brew install tesseract` | no Python dependency; noisy on stylised captions |
-| `rapidocr` | `pip install 'igt[rapidocr]'` | much cleaner on social-video text; about 50 MB |
+| `rapidocr` (default) | `pip install 'igt[rapidocr]'` | much cleaner on social-video text; about 50 MB |
+| `tesseract` | `apt install tesseract-ocr` / `brew install tesseract` | no Python dependency; noisy on stylised captions |
 
 Both need `ffmpeg`. A missing tool exits 3 before anything is downloaded. Sampling is uncapped, so a
 small `--ocr-every` on a long video produces many frames.

@@ -380,7 +380,7 @@ def test_ocr_merge_is_passed_to_default_extractor(monkeypatch):
         ),
     )
     code, _, _ = run([URL, "--ocr", "--ocr-merge", "off", "--ocr-every", "3"])
-    assert code == 0 and seen["a"] == ("tesseract", 3.0, "off")
+    assert code == 0 and seen["a"] == ("rapidocr", 3.0, "off")
 
 
 def test_ocr_merge_rejects_unknown_mode():

@@ -91,7 +91,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="also read on-screen text from video frames (md/json output); needs ffmpeg + an OCR engine",
     )
-    p.add_argument("--ocr-engine", choices=ENGINES, default="tesseract")
+    p.add_argument("--ocr-engine", choices=ENGINES, default="rapidocr")
     p.add_argument(
         "--ocr-every",
         type=_positive_float,
