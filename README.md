@@ -78,7 +78,7 @@ anywhere. With `--out` the file is `<shortcode>.md`.
 | `--llm-provider` | Default model | Needs | Data |
 |---|---|---|---|
 | `anthropic` (default) | `claude-sonnet-5-5` | `pip install 'igt[llm]'`, `ANTHROPIC_API_KEY` (environment only) | extracted caption, transcript and on-screen text are **sent to Anthropic** |
-| `ollama` | `llama3.2` | a running `ollama serve` and `ollama pull <model>`; `OLLAMA_HOST` if not `localhost:11434` | stays on your machine (unless `OLLAMA_HOST` points elsewhere) |
+| `ollama` | `llama3.1:8b` | a running `ollama serve` and `ollama pull <model>`; `OLLAMA_HOST` if not `localhost:11434` | stays on your machine (unless `OLLAMA_HOST` points elsewhere) |
 
 A missing key, package, server or model exits 3 before anything is downloaded; a request failure exits 6.
 

@@ -8,7 +8,7 @@ from igt.idea import material
 from igt.models import Transcript
 
 DEFAULT_MODEL = "claude-sonnet-5-5"
-OLLAMA_DEFAULT_MODEL = "llama3.2"
+OLLAMA_DEFAULT_MODEL = "llama3.1:8b"
 PROVIDERS = ("anthropic", "ollama")
 _OLLAMA_TIMEOUT = 300  # local models can be slow
 _SYSTEM = (

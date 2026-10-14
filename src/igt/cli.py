@@ -123,7 +123,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--llm-model",
-        help="model for --idea-llm (default: claude-sonnet-5-5 for anthropic, llama3.2 for ollama)",
+        help="model for --idea-llm (default: claude-sonnet-5-5 for anthropic, llama3.1:8b for ollama)",
     )
     p.add_argument("--version", action="version", version=f"igt {__version__}")
     return p
