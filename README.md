@@ -72,6 +72,11 @@ on-screen text: a requirements checklist to fill in, open questions, and brainst
 content so you can paste them into any LLM. It is a fixed template, not LLM output; nothing is sent
 anywhere. With `--out` the file is `<shortcode>.md`.
 
+`--idea-llm` (with `--format idea`) adds a "Generated analysis" section written by an Anthropic model
+(`--llm-model`, default `claude-sonnet-5-5`). It **sends the extracted caption, transcript and on-screen text
+to Anthropic**. Install `pip install 'igt[llm]'` and export `ANTHROPIC_API_KEY` (read from the environment only).
+A missing key or package exits 3 before anything is downloaded; an API failure exits 6.
+
 ## Saving output
 
 By default the result goes to stdout. To write a file instead, use one of two options (mutually exclusive):
@@ -120,6 +125,7 @@ Cookies are credentials — keep the file out of the repo.
 | 3 | Configuration error (forbidden/unwritable output path, missing cookies file) |
 | 4 | Download failed (login required, no video, rate limit, ...) |
 | 5 | Transcription failed, or no speech detected |
+| 6 | LLM request failed (`--idea-llm`) |
 | 130 | Interrupted (Ctrl-C) |
 
 `--format json` and `--format md` include the video's creator, upload date, duration, caption and hashtags

@@ -18,6 +18,8 @@ All notable changes to this project are documented here. Format follows
   A silent video with readable on-screen text no longer fails with "no speech".
 - `--format idea` writes a project-idea brief (requirements checklist, open questions, brainstorm prompts
   embedding the extracted content). Template-based; no LLM call. `--out` saves it as `<shortcode>.md`.
+- `--idea-llm` (with `--format idea`) adds an LLM-written analysis via Anthropic (`--llm-model`; optional
+  extra `igt[llm]`; key from `ANTHROPIC_API_KEY`). Sends the extracted text to Anthropic. Exit 6 on API failure.
 
 ### Fixed
 - Facebook share links (`facebook.com/share/r/<code>`, `/share/v/<code>`) are accepted.

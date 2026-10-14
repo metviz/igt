@@ -27,23 +27,30 @@ _PROMPTS = (
 )
 
 
-def to_idea(t: Transcript) -> str:
-    title = " ".join(t.title.split()) or "Untitled"
+def material(t: Transcript) -> str:
+    """Caption, transcript and on-screen text as markdown (also the LLM input)."""
     speech = "\n".join(s.text.strip() for s in t.segments if s.text.strip())
     shown = "\n".join(o.text for o in t.on_screen)
-    material = []
+    parts = []
     if t.caption.strip():
-        material.append(f"### Caption\n\n{t.caption.strip()}")
-    material.append(f"### Transcript\n\n{speech}")
+        parts.append(f"### Caption\n\n{t.caption.strip()}")
+    parts.append(f"### Transcript\n\n{speech}")
     if shown:
-        material.append(f"### On-screen text\n\n{shown}")
-    body = "\n\n".join(material)
+        parts.append(f"### On-screen text\n\n{shown}")
+    return "\n\n".join(parts)
+
+
+def to_idea(t: Transcript, analysis: str = "") -> str:
+    title = " ".join(t.title.split()) or "Untitled"
+    body = material(t)
     parts = [f"# Project idea: {title}"]
     if t.url:
         parts.append(f"Source: {t.url}")
     if t.hashtags:
         parts.append("Keywords: " + " ".join(f"#{h}" for h in t.hashtags))
     parts.append(f"## Source material\n\n{body}")
+    if analysis.strip():
+        parts.append(f"## Generated analysis\n\n{analysis.strip()}")
     parts.append(
         "## Potential requirements\n\nFill in or strike out:\n\n"
         + "\n".join(f"- [ ] {s}" for s in _REQUIREMENT_STUBS)

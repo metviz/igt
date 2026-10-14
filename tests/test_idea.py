@@ -54,3 +54,14 @@ def test_no_on_screen_section_when_absent():
 
 def test_blank_title_falls_back():
     assert to_idea(make(title="  ")).startswith("# Project idea: Untitled")
+
+
+def test_analysis_section_placed_after_source_material():
+    out = to_idea(make(), analysis="LLM says hi")
+    assert "## Generated analysis\n\nLLM says hi" in out
+    assert out.index("## Source material") < out.index("## Generated analysis")
+    assert out.index("## Generated analysis") < out.index("## Potential requirements")
+
+
+def test_no_analysis_section_by_default():
+    assert "Generated analysis" not in to_idea(make())

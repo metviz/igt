@@ -10,6 +10,8 @@ from igt.download import Downloader, YtDlpDownloader
 from igt.errors import ConfigError, IgtError
 from igt.formatters import FORMATS
 from igt.ocr import ENGINES, MERGE_MODES, TextExtractor, make_extractor
+from igt.idea import to_idea
+from igt.llm import DEFAULT_MODEL, AnthropicIdeaWriter, IdeaWriter
 from igt.pipeline import generate, save_audio
 from igt.transcribe import FasterWhisperTranscriber, Transcriber
 from igt.url import parse_video_url
@@ -108,6 +110,12 @@ def build_parser() -> argparse.ArgumentParser:
             "exact (identical text only), off (every sampled frame)"
         ),
     )
+    p.add_argument(
+        "--idea-llm",
+        action="store_true",
+        help="with --format idea: add an LLM-written analysis (needs ANTHROPIC_API_KEY and igt[llm]); sends the extracted text to Anthropic",
+    )
+    p.add_argument("--llm-model", default=DEFAULT_MODEL, help=f"model for --idea-llm (default: {DEFAULT_MODEL})")
     p.add_argument("--version", action="version", version=f"igt {__version__}")
     return p
 
@@ -147,6 +155,7 @@ def _run(
     downloader: Downloader | None,
     transcriber: Transcriber | None,
     extractor: TextExtractor | None,
+    idea_writer: IdeaWriter | None,
     stdout: TextIO,
 ) -> None:
     parsed = parse_video_url(args.url)
@@ -186,6 +195,10 @@ def _run(
             extractor.check()  # fail fast, before the download
     else:
         extractor = None
+    if args.idea_llm:
+        idea_writer = idea_writer or AnthropicIdeaWriter(args.llm_model, env)
+        if hasattr(idea_writer, "check"):
+            idea_writer.check()  # fail fast, before the download
     transcript = generate(
         args.url,
         downloader=downloader
@@ -198,7 +211,10 @@ def _run(
         transcriber=transcriber or FasterWhisperTranscriber(args.model),
         language=args.language,
     )
-    rendered = FORMATS[args.format](transcript).rstrip("\n") + "\n"
+    if args.idea_llm:
+        rendered = to_idea(transcript, idea_writer.write(transcript))
+    else:
+        rendered = FORMATS[args.format](transcript).rstrip("\n") + "\n"
     if target is None:
         stdout.write(rendered)
         return
@@ -216,6 +232,7 @@ def main(
     downloader: Downloader | None = None,
     transcriber: Transcriber | None = None,
     extractor: TextExtractor | None = None,
+    idea_writer: IdeaWriter | None = None,
     stdout: TextIO | None = None,
     stderr: TextIO | None = None,
 ) -> int:
@@ -223,10 +240,12 @@ def main(
     args = parser.parse_args(argv)
     if args.ocr and args.mp3:
         parser.error("--ocr cannot be combined with --mp3")
+    if args.idea_llm and args.format != "idea":
+        parser.error("--idea-llm requires --format idea")
     env = os.environ if env is None else env
     stdout, stderr = stdout or sys.stdout, stderr or sys.stderr
     try:
-        _run(args, env, downloader, transcriber, extractor, stdout)
+        _run(args, env, downloader, transcriber, extractor, idea_writer, stdout)
         return 0
     except IgtError as exc:
         stderr.write(f"error: {exc}\n")

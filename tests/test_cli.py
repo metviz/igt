@@ -395,3 +395,64 @@ def test_idea_format_out_is_saved_as_md(tmp_path):
     (f,) = tmp_path.iterdir()
     assert f.suffix == ".md"
     assert "## Brainstorm prompts" in f.read_text()
+
+
+class FakeWriter:
+    def __init__(self, text="LLM analysis", raises=None):
+        self.text, self.raises, self.checked, self.calls = text, raises, 0, 0
+
+    def check(self):
+        self.checked += 1
+
+    def write(self, transcript):
+        self.calls += 1
+        if self.raises:
+            raise self.raises
+        return self.text
+
+
+def run_llm(argv, writer, downloader=None):
+    out, err = io.StringIO(), io.StringIO()
+    code = main(
+        argv,
+        env={},
+        downloader=downloader or FakeDownloader(),
+        transcriber=FakeTranscriber(),
+        idea_writer=writer,
+        stdout=out,
+        stderr=err,
+    )
+    return code, out.getvalue(), err.getvalue()
+
+
+def test_idea_llm_adds_generated_analysis():
+    w = FakeWriter()
+    code, out, _ = run_llm([URL, "--format", "idea", "--idea-llm"], w)
+    assert code == 0 and "## Generated analysis\n\nLLM analysis" in out
+    assert (w.checked, w.calls) == (1, 1)
+
+
+def test_idea_llm_requires_idea_format():
+    with pytest.raises(SystemExit):
+        run_llm([URL, "--idea-llm"], FakeWriter())
+
+
+def test_idea_llm_check_runs_before_download():
+    from igt.errors import ConfigError
+
+    class Bad(FakeWriter):
+        def check(self):
+            raise ConfigError("no key")
+
+    d = FakeDownloader()
+    code, _, err = run_llm([URL, "--format", "idea", "--idea-llm"], Bad(), d)
+    assert code == 3 and "no key" in err and not getattr(d, "calls", 0)
+
+
+def test_idea_llm_api_error_exits_6():
+    from igt.errors import ApiError
+
+    code, _, err = run_llm(
+        [URL, "--format", "idea", "--idea-llm"], FakeWriter(raises=ApiError("down"))
+    )
+    assert code == 6 and "down" in err
