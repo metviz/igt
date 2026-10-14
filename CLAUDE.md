@@ -26,7 +26,8 @@ src/igt/
   url.py         parse_video_url -> ParsedUrl (Instagram + YouTube + Facebook + TikTok; strict host allow-list, canonical URL)
   models.py      Segment, OnScreenText, Transcript (frozen dataclasses)
   formatters.py  to_txt / to_srt / to_json / to_md, FORMATS registry (includes idea)
-  idea.py        material(), to_idea(): template brief (requirements stubs, questions, prompts); no LLM
+  idea.py        material(), to_idea(): template brief (Requirements checklist, questions, prompts); no LLM.
+                 LLM analysis goes under `## Generated analysis`; its #/## headings are demoted to ###
   config.py      REPO_ROOT, outside(), env_path(), out_base() — the ONLY module that knows path policy
   download.py    Downloader protocol, YtDlpDownloader (mp3= / video= modes), Downloaded (path + metadata)
   ocr.py         TextExtractor protocol; ffmpeg frame sampling + tesseract or rapidocr (default); fuzzy/exact/off merge
@@ -56,7 +57,7 @@ Design: pure core + I/O seams (`Downloader`, `Transcriber`, `TextExtractor`, `Id
 - Optional-tool checks (`extractor.check()`, `idea_writer.check()`) run **before** the download.
 - LLM keys come from the environment only (`ANTHROPIC_API_KEY`), never argv. `--idea-llm` with the anthropic
   provider sends extracted text to Anthropic; ollama stays local (`OLLAMA_HOST`).
-- TDD: failing test first, watch it fail, minimal code, keep ≥80% coverage (currently ~98%, 233 tests).
+- TDD: failing test first, watch it fail, minimal code, keep ≥80% coverage (currently ~98%, 235 tests).
 - Immutable data (frozen dataclasses, tuples). Small files. No `print` outside `cli.py`.
 - Commit messages: `<type>: <description>`; body ends with `developed with the help of AI assistance`.
   Never add `Co-Authored-By` or `Claude-Session` trailers.
