@@ -20,6 +20,8 @@ All notable changes to this project are documented here. Format follows
   embedding the extracted content). Template-based; no LLM call. `--out` saves it as `<shortcode>.md`.
 - `--idea-llm` (with `--format idea`) adds an LLM-written analysis via Anthropic (`--llm-model`; optional
   extra `igt[llm]`; key from `ANTHROPIC_API_KEY`). Sends the extracted text to Anthropic. Exit 6 on API failure.
+- `--llm-provider ollama` runs `--idea-llm` on a local Ollama model (`OLLAMA_HOST`, default `llama3.2`; stdlib
+  only, no extra dependency). `--llm-model` overrides the default for either provider.
 
 ### Fixed
 - Facebook share links (`facebook.com/share/r/<code>`, `/share/v/<code>`) are accepted.

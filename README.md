@@ -72,10 +72,15 @@ on-screen text: a requirements checklist to fill in, open questions, and brainst
 content so you can paste them into any LLM. It is a fixed template, not LLM output; nothing is sent
 anywhere. With `--out` the file is `<shortcode>.md`.
 
-`--idea-llm` (with `--format idea`) adds a "Generated analysis" section written by an Anthropic model
-(`--llm-model`, default `claude-sonnet-5-5`). It **sends the extracted caption, transcript and on-screen text
-to Anthropic**. Install `pip install 'igt[llm]'` and export `ANTHROPIC_API_KEY` (read from the environment only).
-A missing key or package exits 3 before anything is downloaded; an API failure exits 6.
+`--idea-llm` (with `--format idea`) adds a "Generated analysis" section written by an LLM. Pick the backend with
+`--llm-provider` and the model with `--llm-model`:
+
+| `--llm-provider` | Default model | Needs | Data |
+|---|---|---|---|
+| `anthropic` (default) | `claude-sonnet-5-5` | `pip install 'igt[llm]'`, `ANTHROPIC_API_KEY` (environment only) | extracted caption, transcript and on-screen text are **sent to Anthropic** |
+| `ollama` | `llama3.2` | a running `ollama serve` and `ollama pull <model>`; `OLLAMA_HOST` if not `localhost:11434` | stays on your machine (unless `OLLAMA_HOST` points elsewhere) |
+
+A missing key, package, server or model exits 3 before anything is downloaded; a request failure exits 6.
 
 ## Saving output
 

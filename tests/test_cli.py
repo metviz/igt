@@ -456,3 +456,8 @@ def test_idea_llm_api_error_exits_6():
         [URL, "--format", "idea", "--idea-llm"], FakeWriter(raises=ApiError("down"))
     )
     assert code == 6 and "down" in err
+
+
+def test_llm_provider_option_choices():
+    with pytest.raises(SystemExit):
+        run_llm([URL, "--format", "idea", "--idea-llm", "--llm-provider", "nope"], FakeWriter())

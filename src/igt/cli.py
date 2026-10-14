@@ -11,7 +11,7 @@ from igt.errors import ConfigError, IgtError
 from igt.formatters import FORMATS
 from igt.ocr import ENGINES, MERGE_MODES, TextExtractor, make_extractor
 from igt.idea import to_idea
-from igt.llm import DEFAULT_MODEL, AnthropicIdeaWriter, IdeaWriter
+from igt.llm import PROVIDERS, IdeaWriter, make_writer
 from igt.pipeline import generate, save_audio
 from igt.transcribe import FasterWhisperTranscriber, Transcriber
 from igt.url import parse_video_url
@@ -113,9 +113,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--idea-llm",
         action="store_true",
-        help="with --format idea: add an LLM-written analysis (needs ANTHROPIC_API_KEY and igt[llm]); sends the extracted text to Anthropic",
+        help="with --format idea: add an LLM-written analysis; see --llm-provider (anthropic needs ANTHROPIC_API_KEY and igt[llm] and sends the extracted text to Anthropic)",
     )
-    p.add_argument("--llm-model", default=DEFAULT_MODEL, help=f"model for --idea-llm (default: {DEFAULT_MODEL})")
+    p.add_argument(
+        "--llm-provider",
+        choices=PROVIDERS,
+        default="anthropic",
+        help="backend for --idea-llm: anthropic (cloud) or ollama (local, no data leaves the machine)",
+    )
+    p.add_argument(
+        "--llm-model",
+        help="model for --idea-llm (default: claude-sonnet-5-5 for anthropic, llama3.2 for ollama)",
+    )
     p.add_argument("--version", action="version", version=f"igt {__version__}")
     return p
 
@@ -196,7 +205,7 @@ def _run(
     else:
         extractor = None
     if args.idea_llm:
-        idea_writer = idea_writer or AnthropicIdeaWriter(args.llm_model, env)
+        idea_writer = idea_writer or make_writer(args.llm_provider, args.llm_model, env)
         if hasattr(idea_writer, "check"):
             idea_writer.check()  # fail fast, before the download
     transcript = generate(

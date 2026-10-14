@@ -64,3 +64,80 @@ def test_api_failure_is_api_error_without_leaking_key():
 def test_empty_response_is_api_error():
     with pytest.raises(ApiError, match="empty"):
         writer(FakeClient("  ")).write(T)
+
+
+# --- Ollama ---------------------------------------------------------------
+import urllib.error  # noqa: E402
+
+from igt.llm import OLLAMA_DEFAULT_MODEL, OllamaIdeaWriter, make_writer  # noqa: E402
+
+
+class FakeHttp:
+    def __init__(self, tags=("m2:latest",), chat="local analysis", fail=None):
+        self.tags, self.chat, self.fail, self.calls = tags, chat, fail, []
+
+    def __call__(self, url, payload=None):
+        self.calls.append((url, payload))
+        if self.fail:
+            raise self.fail
+        if url.endswith("/api/tags"):
+            return {"models": [{"name": n} for n in self.tags]}
+        return {"message": {"content": self.chat}}
+
+
+def ollama(http, env=None, model="m2"):
+    return OllamaIdeaWriter(model, {} if env is None else env, http)
+
+
+def test_ollama_write_posts_chat_to_default_host():
+    h = FakeHttp()
+    assert ollama(h).write(T) == "local analysis"
+    url, payload = h.calls[0]
+    assert url == "http://localhost:11434/api/chat"
+    assert payload["model"] == "m2" and payload["stream"] is False
+    assert "tiny embedding model" in payload["messages"][-1]["content"]
+
+
+def test_ollama_host_from_env_with_trailing_slash():
+    h = FakeHttp()
+    ollama(h, {"OLLAMA_HOST": "http://box:1234/"}).write(T)
+    assert h.calls[0][0] == "http://box:1234/api/chat"
+
+
+def test_ollama_host_without_scheme_gets_http():
+    h = FakeHttp()
+    ollama(h, {"OLLAMA_HOST": "box:1234"}).write(T)
+    assert h.calls[0][0] == "http://box:1234/api/chat"
+
+
+def test_ollama_check_ok_when_model_present_with_or_without_tag():
+    ollama(FakeHttp(tags=("m2:latest",))).check()
+    ollama(FakeHttp(tags=("m2:7b",)), model="m2:7b").check()
+
+
+def test_ollama_check_missing_model_hints_pull():
+    with pytest.raises(ConfigError, match="ollama pull m2"):
+        ollama(FakeHttp(tags=("other:1b",))).check()
+
+
+def test_ollama_check_unreachable_is_config_error():
+    h = FakeHttp(fail=urllib.error.URLError("refused"))
+    with pytest.raises(ConfigError, match="cannot reach Ollama"):
+        ollama(h).check()
+
+
+def test_ollama_request_failure_is_api_error():
+    with pytest.raises(ApiError, match="boom"):
+        ollama(FakeHttp(fail=RuntimeError("boom"))).write(T)
+
+
+def test_ollama_empty_response_is_api_error():
+    with pytest.raises(ApiError, match="empty"):
+        ollama(FakeHttp(chat=" ")).write(T)
+
+
+def test_make_writer_picks_provider_and_default_model():
+    assert isinstance(make_writer("ollama", None, {}), OllamaIdeaWriter)
+    assert make_writer("ollama", None, {})._model == OLLAMA_DEFAULT_MODEL
+    assert isinstance(make_writer("anthropic", "x", {}), AnthropicIdeaWriter)
+    assert make_writer("anthropic", "x", {})._model == "x"
