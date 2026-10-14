@@ -163,7 +163,7 @@ def _run(
     if (
         args.out or args.mp3 or args.out_file is not None
     ):  # validate the destination before the expensive work
-        ext = "mp3" if args.mp3 else args.format
+        ext = "mp3" if args.mp3 else {"idea": "md"}.get(args.format, args.format)
         root, name = _resolve_out(args, env, f"{parsed.shortcode}.{ext}")
         target = _prepare_target(root, name)
     if args.mp3:

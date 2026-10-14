@@ -16,6 +16,8 @@ All notable changes to this project are documented here. Format follows
   (default; optional extra: `pip install 'igt[rapidocr]'`) or `tesseract` (system binary).
   `--ocr-merge {fuzzy,exact,off}` controls how repeated text is collapsed (default `fuzzy`).
   A silent video with readable on-screen text no longer fails with "no speech".
+- `--format idea` writes a project-idea brief (requirements checklist, open questions, brainstorm prompts
+  embedding the extracted content). Template-based; no LLM call. `--out` saves it as `<shortcode>.md`.
 
 ### Fixed
 - Facebook share links (`facebook.com/share/r/<code>`, `/share/v/<code>`) are accepted.

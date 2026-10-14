@@ -40,7 +40,7 @@ def test_json_shape_mirrors_server_payload_and_keeps_unicode():
 
 
 def test_registry_keys():
-    assert set(FORMATS) == {"txt", "srt", "json", "md"}
+    assert set(FORMATS) == {"txt", "srt", "json", "md", "idea"}
 
 
 def test_json_includes_metadata():

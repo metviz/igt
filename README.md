@@ -46,6 +46,7 @@ igt URL --cookies ~/secrets/instagram-cookies.txt              # ...or an export
 igt URL --out --format srt                                    # writes ./ABC123xyz.srt (see Saving output)
 igt URL --out-file notes.md --format md                        # writes ./notes.md
 igt URL --mp3                                                  # audio only: writes ./ABC123xyz.mp3, no transcription
+igt URL --format idea --out                                    # project-idea brief: requirements stubs + brainstorm prompts (see below)
 igt URL --ocr --format md                                      # also read on-screen text (see On-screen text)
 ```
 
@@ -63,6 +64,13 @@ unchanged. A video with no speech but readable on-screen text succeeds. Not comb
 
 Both need `ffmpeg`. A missing tool exits 3 before anything is downloaded. Sampling is uncapped, so a
 small `--ocr-every` on a long video produces many frames.
+
+## Project-idea brief
+
+`--format idea` writes a markdown brief seeded with the extracted caption, transcript and (with `--ocr`)
+on-screen text: a requirements checklist to fill in, open questions, and brainstorm prompts that embed the
+content so you can paste them into any LLM. It is a fixed template, not LLM output; nothing is sent
+anywhere. With `--out` the file is `<shortcode>.md`.
 
 ## Saving output
 

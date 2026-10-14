@@ -1,6 +1,7 @@
 import json
 from typing import Callable
 
+from igt.idea import to_idea
 from igt.models import Transcript
 
 
@@ -89,4 +90,5 @@ FORMATS: dict[str, Callable[[Transcript], str]] = {
     "srt": to_srt,
     "json": to_json,
     "md": to_md,
+    "idea": to_idea,
 }

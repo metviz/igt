@@ -387,3 +387,11 @@ def test_ocr_merge_rejects_unknown_mode():
     with pytest.raises(SystemExit) as e:
         run([URL, "--ocr", "--ocr-merge", "wild"])
     assert e.value.code == 2
+
+
+def test_idea_format_out_is_saved_as_md(tmp_path):
+    code, out, _ = run([URL, "--format", "idea", "--out"], env={"IGT_OUT_ROOT": str(tmp_path)})
+    assert code == 0
+    (f,) = tmp_path.iterdir()
+    assert f.suffix == ".md"
+    assert "## Brainstorm prompts" in f.read_text()
