@@ -2,7 +2,9 @@
 
 `igt <url>` downloads an Instagram reel/post's, YouTube video's, Facebook reel/video's or TikTok video's
 audio (yt-dlp) and transcribes it locally (faster-whisper).
-Output: `txt | srt | json | md` to stdout, or to a file with `--out`. Standalone project; it began as the CLI
+Output: `txt | srt | json | md | idea` to stdout, or to a file with `--out` / `--out-file PATH`.
+Extras: `--mp3` (save audio), `--ocr` (on-screen text), `--format idea` (project-idea brief) and `--idea-llm`
+(LLM analysis). Scope is extraction plus idea/prompt/brainstorm generation; no media indexing or search. Standalone project; it began as the CLI
 counterpart of a Chrome extension (separate repo) but shares no code with it. History: `docs/plans/`.
 
 ## Commands
@@ -22,19 +24,22 @@ uv run igt --help
 ```
 src/igt/
   url.py         parse_video_url -> ParsedUrl (Instagram + YouTube + Facebook + TikTok; strict host allow-list, canonical URL)
-  models.py      Segment, Transcript (frozen dataclasses)
-  formatters.py  to_txt / to_srt / to_json / to_md, FORMATS registry
+  models.py      Segment, OnScreenText, Transcript (frozen dataclasses)
+  formatters.py  to_txt / to_srt / to_json / to_md, FORMATS registry (includes idea)
+  idea.py        material(), to_idea(): template brief (requirements stubs, questions, prompts); no LLM
   config.py      REPO_ROOT, outside(), env_path(), out_base() — the ONLY module that knows path policy
-  download.py    Downloader protocol, YtDlpDownloader, Downloaded (audio path + metadata)
+  download.py    Downloader protocol, YtDlpDownloader (mp3= / video= modes), Downloaded (path + metadata)
+  ocr.py         TextExtractor protocol; ffmpeg frame sampling + tesseract or rapidocr (default); fuzzy/exact/off merge
+  llm.py         IdeaWriter protocol; AnthropicIdeaWriter, OllamaIdeaWriter (stdlib REST), make_writer()
   transcribe.py  Transcriber protocol, FasterWhisperTranscriber (lazy model load)
-  pipeline.py    generate(): parse -> download -> transcribe -> Transcript; temp dir always removed
+  pipeline.py    generate(): parse -> download -> transcribe (+ OCR) -> Transcript; save_audio() for --mp3; temp dir always removed
   cli.py         argparse + main(); maps IgtError.exit_code to the process exit code
   errors.py      IgtError hierarchy, one exit_code per class
-tests/           fakes.py (FakeDownloader/FakeTranscriber), one test_*.py per module, integration/ (opt-in)
+tests/           fakes.py (FakeDownloader/FakeTranscriber/FakeExtractor), one test_*.py per module, integration/ (opt-in)
 ```
 
-Design: pure core + two I/O seams (`Downloader`, `Transcriber`) injected into `pipeline.generate()` and
-`cli.main()`. Tests use fakes at the seams; never hit the network or load a model in unit tests.
+Design: pure core + I/O seams (`Downloader`, `Transcriber`, `TextExtractor`, `IdeaWriter`) injected into
+`pipeline.generate()` and `cli.main()`. Tests use fakes at the seams; never hit the network or load a model in unit tests.
 
 ## Hard rules
 
@@ -46,13 +51,17 @@ Design: pure core + two I/O seams (`Downloader`, `Transcriber`) injected into `p
   depth only — no `!` re-include rules.
 - stdout carries only the result; errors go to stderr as `error: <message>`; no tracebacks for expected failures.
   yt-dlp's own logger is silenced (`_SilentLogger`) so igt owns stderr.
-- Exit codes: 0 ok · 2 bad URL/usage · 3 config · 4 download · 5 transcription/no speech · 130 Ctrl-C.
-  (`ApiError`/6 exists but is unused — dead code unless the optional API backend is built.)
-- TDD: failing test first, watch it fail, minimal code, keep ≥80% coverage (currently ~98%).
+- Exit codes: 0 ok · 2 bad URL/usage · 3 config (incl. missing OCR tool, LLM key/package/server/model) ·
+  4 download/ffmpeg · 5 transcription/no speech · 6 LLM request failed (`ApiError`) · 130 Ctrl-C.
+- Optional-tool checks (`extractor.check()`, `idea_writer.check()`) run **before** the download.
+- LLM keys come from the environment only (`ANTHROPIC_API_KEY`), never argv. `--idea-llm` with the anthropic
+  provider sends extracted text to Anthropic; ollama stays local (`OLLAMA_HOST`).
+- TDD: failing test first, watch it fail, minimal code, keep ≥80% coverage (currently ~98%, 233 tests).
 - Immutable data (frozen dataclasses, tuples). Small files. No `print` outside `cli.py`.
 - Commit messages: `<type>: <description>`; body ends with `developed with the help of AI assistance`.
   Never add `Co-Authored-By` or `Claude-Session` trailers.
-- Never publish/push without confirming repo name and visibility first. No git remote is configured yet.
+- Remote: `origin` = metviz/igt (public). Confirm before pushing anything new outside the usual `main` flow.
+- Optional extras: `igt[rapidocr]` (default OCR engine), `igt[llm]` (anthropic SDK).
 
 ## Open items
 
@@ -68,7 +77,7 @@ Design: pure core + two I/O seams (`Downloader`, `Transcriber`) injected into `p
   multi-video carousels download every video but transcribe only the first (`noplaylist` is ignored by the
   Instagram extractor); fallback error keeps yt-dlp's `ERROR:` prefix and rate-limit/deleted reels can read as
   "login required"; non-`DownloadError` from yt-dlp or a missing `filepath` can still traceback; SRT cue breaks
-  if a segment contains a blank line; `ApiError` dead code / exit 1 undocumented in README;
+  if a segment contains a blank line; 
   `REPO_ROOT` guard only accurate for an editable install.
 - Optional, unbuilt: `--backend api` mirroring the extension's `POST /api/ext/v1/transcript` contract
   (Task 8 in `docs/plans/2026-09-27-igt-cli.md`) — only if a compatible server exists.
