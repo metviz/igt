@@ -38,6 +38,12 @@ def test_write_sends_material_and_returns_text():
     assert c.kw["max_tokens"] > 0
 
 
+def test_system_prompt_asks_for_level_3_headings_only():
+    from igt.llm import _SYSTEM
+
+    assert "###" in _SYSTEM and "never use # or ##" in _SYSTEM
+
+
 def test_check_needs_api_key():
     with pytest.raises(ConfigError, match="ANTHROPIC_API_KEY"):
         writer(FakeClient(), env={}).check()

@@ -26,7 +26,7 @@ def test_sections_and_source_material():
     for heading in (
         "# Project idea: Embedding Gemma",
         "## Source material",
-        "## Potential requirements",
+        "## Requirements checklist",
         "## Open questions",
         "## Brainstorm prompts",
     ):
@@ -60,8 +60,17 @@ def test_analysis_section_placed_after_source_material():
     out = to_idea(make(), analysis="LLM says hi")
     assert "## Generated analysis\n\nLLM says hi" in out
     assert out.index("## Source material") < out.index("## Generated analysis")
-    assert out.index("## Generated analysis") < out.index("## Potential requirements")
+    assert out.index("## Generated analysis") < out.index("## Requirements checklist")
 
 
 def test_no_analysis_section_by_default():
     assert "Generated analysis" not in to_idea(make())
+
+
+def test_analysis_headings_are_demoted_to_level_3():
+    out = to_idea(make(), analysis="# Title\n\n## Summary\ntext\n### Keep\n#hashtag\n```\n# in code\n```")
+    block = out.split("## Generated analysis")[1].split("## Requirements checklist")[0]
+    assert "\n### Title" in block and "\n### Summary" in block
+    assert "\n### Keep" in block and "\n#hashtag" in block
+    assert "\n# in code" in block
+    assert "\n# Title" not in block and "\n## Summary" not in block

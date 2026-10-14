@@ -1,3 +1,5 @@
+import re
+
 from igt.models import Transcript
 
 # Deterministic template: no LLM is called. The prompts embed the extracted
@@ -40,6 +42,19 @@ def material(t: Transcript) -> str:
     return "\n\n".join(parts)
 
 
+_TOP_HEADING = re.compile(r"^#{1,2}(?=\s)")
+
+
+def _demote(analysis: str) -> str:
+    """Keep model output below the brief's own ## sections; leave code fences alone."""
+    out, fenced = [], False
+    for line in analysis.strip().splitlines():
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+        out.append(line if fenced else _TOP_HEADING.sub("###", line))
+    return "\n".join(out)
+
+
 def to_idea(t: Transcript, analysis: str = "") -> str:
     title = " ".join(t.title.split()) or "Untitled"
     body = material(t)
@@ -50,9 +65,9 @@ def to_idea(t: Transcript, analysis: str = "") -> str:
         parts.append("Keywords: " + " ".join(f"#{h}" for h in t.hashtags))
     parts.append(f"## Source material\n\n{body}")
     if analysis.strip():
-        parts.append(f"## Generated analysis\n\n{analysis.strip()}")
+        parts.append(f"## Generated analysis\n\n{_demote(analysis)}")
     parts.append(
-        "## Potential requirements\n\nFill in or strike out:\n\n"
+        "## Requirements checklist\n\nFill in or strike out:\n\n"
         + "\n".join(f"- [ ] {s}" for s in _REQUIREMENT_STUBS)
     )
     parts.append("## Open questions\n\n" + "\n".join(f"- {q}" for q in _QUESTIONS))

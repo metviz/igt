@@ -14,9 +14,10 @@ _OLLAMA_TIMEOUT = 300  # local models can be slow
 _SYSTEM = (
     "You turn a short social-video's extracted content into a project brief. "
     "Use only what the material supports; label guesses as assumptions. "
-    "Reply in markdown with these sections: Summary, Potential requirements "
+    "Reply in markdown with these ### sections: Summary, Potential requirements "
     "(functional, non-functional, data), Risks and unknowns, Suggested first "
-    "experiment, Brainstorm prompts. Do not repeat the material."
+    "experiment, Brainstorm prompts. Use ### headings only: never use # or ##, "
+    "and add no title. Do not repeat the material."
 )
 
 
