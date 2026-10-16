@@ -74,3 +74,27 @@ def test_analysis_headings_are_demoted_to_level_3():
     assert "\n### Keep" in block and "\n#hashtag" in block
     assert "\n# in code" in block
     assert "\n# Title" not in block and "\n## Summary" not in block
+
+
+FB_TITLE = (
+    "15 reactions | When anyone can copy your software’s features, what becomes "
+    "your competitive advantage? 🤔 Tools like REA are changing how software "
+    "gets built. | Sathya Sankar"
+)
+
+
+def test_facebook_title_drops_reaction_count_author_and_trailing_sentences():
+    first = to_idea(make(title=FB_TITLE)).splitlines()[0]
+    assert first == (
+        "# Project idea: When anyone can copy your software’s features, "
+        "what becomes your competitive advantage?"
+    )
+
+
+def test_long_title_is_cut_at_a_word_boundary():
+    first = to_idea(make(title="word " * 40)).splitlines()[0]
+    assert first.endswith("…") and len(first) <= len("# Project idea: ") + 101
+
+
+def test_short_title_is_untouched():
+    assert to_idea(make()).startswith("# Project idea: Embedding Gemma\n")

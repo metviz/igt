@@ -55,8 +55,22 @@ def _demote(analysis: str) -> str:
     return "\n".join(out)
 
 
+_COUNT_PREFIX = re.compile(r"^\s*[\d.,]+[KkMm]?\s+(reactions?|views?|likes?)\s*\|\s*")
+_SENTENCE_END = re.compile(r"(?<=[.!?])\s")
+_TITLE_MAX = 100
+
+
+def _title(raw: str) -> str:
+    """Short heading from a title that may be a whole social-media caption."""
+    text = _COUNT_PREFIX.sub("", raw).split("|")[0]
+    text = _SENTENCE_END.split(" ".join(text.split()), maxsplit=1)[0]
+    if len(text) > _TITLE_MAX:
+        text = text[:_TITLE_MAX].rsplit(" ", 1)[0].rstrip(",;:") + "…"
+    return text or "Untitled"
+
+
 def to_idea(t: Transcript, analysis: str = "") -> str:
-    title = " ".join(t.title.split()) or "Untitled"
+    title = _title(t.title)
     body = material(t)
     parts = [f"# Project idea: {title}"]
     if t.url:

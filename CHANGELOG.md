@@ -25,6 +25,8 @@ All notable changes to this project are documented here. Format follows
 
 ### Fixed
 - Facebook share links (`facebook.com/share/r/<code>`, `/share/v/<code>`) are accepted.
+- `--format idea` heading is now short: a social-media caption used as the title loses its "N reactions |"
+  prefix and "| Author" suffix, is cut to the first sentence, and is capped at 100 characters.
 
 ### Changed
 - The output directory for `--out` and relative `--out-file` is `$IGT_OUT_ROOT` if set, otherwise the
