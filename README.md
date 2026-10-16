@@ -7,6 +7,10 @@ Instagram reel/post's, YouTube video's, Facebook reel/video's or TikTok video's 
 [yt-dlp](https://github.com/yt-dlp/yt-dlp) and transcribes it locally with
 [faster-whisper](https://github.com/SYSTRAN/faster-whisper). No server needed.
 
+Beyond the transcript it can save the audio as mp3 (`--mp3`), read on-screen text from the video (`--ocr`),
+and turn what it extracted into a project-idea brief with requirements and brainstorm prompts
+(`--format idea`, optionally analysed by a local or cloud LLM with `--idea-llm`).
+
 ## Install
 
 Requires [`ffmpeg`](https://ffmpeg.org/) on `PATH` (yt-dlp shells out to it for some audio
@@ -31,6 +35,10 @@ igt --help
 
 The first run downloads the Whisper model (`base` by default).
 
+Optional extras: `pip install 'igt[rapidocr]'` (default OCR engine for `--ocr`) and `pip install 'igt[llm]'`
+(Anthropic SDK for `--idea-llm --llm-provider anthropic`; the Ollama provider needs no extra). With uv:
+`uv sync --extra rapidocr --extra llm`.
+
 ## Usage
 
 ```bash
@@ -38,7 +46,7 @@ igt https://www.instagram.com/reel/ABC123xyz/                 # transcript text 
 igt https://www.youtube.com/watch?v=dQw4w9WgXcQ                # or a YouTube video/short
 igt https://www.facebook.com/reel/1234567890123456             # or a Facebook reel/video/fb.watch link
 igt https://www.tiktok.com/@someuser/video/7123456789012345678  # or a TikTok video/short link
-igt URL --format md                                            # txt | srt | json | md (markdown: source URL, metadata, caption, timestamped transcript)
+igt URL --format md                                            # txt | srt | json | md | idea (md: source URL, metadata, caption, timestamped transcript)
 igt URL --format srt > captions.srt                            # numbered cues with HH:MM:SS,mmm timestamps
 igt URL --language hi --model small                            # skip auto-detect, bigger model
 igt URL --cookies-from firefox                                 # login-walled videos: use your browser session
@@ -48,6 +56,7 @@ igt URL --out-file notes.md --format md                        # writes ./notes.
 igt URL --mp3                                                  # audio only: writes ./ABC123xyz.mp3, no transcription
 igt URL --format idea --out                                    # project-idea brief: requirements stubs + brainstorm prompts (see below)
 igt URL --ocr --format md                                      # also read on-screen text (see On-screen text)
+igt URL --format idea --idea-llm --llm-provider ollama         # add an LLM analysis, run locally (see Project-idea brief)
 ```
 
 ## On-screen text (OCR)
@@ -84,7 +93,7 @@ A missing key, package, server or model exits 3 before anything is downloaded; a
 
 ## Saving output
 
-By default the result goes to stdout. To write a file instead, use one of two options (mutually exclusive):
+By default the result goes to stdout. To write a file instead, use `--out` or `--out-file` (mutually exclusive); `--mp3` also writes a file:
 
 | Option | Writes to |
 |---|---|
@@ -108,7 +117,8 @@ Quote URLs containing `?` or `&` so the shell doesn't glob or background them.
 
 Accepted URLs: `instagram.com/(reel|p|tv)/<id>/` (optionally with a `/<username>/` prefix);
 `youtube.com/watch?v=<id>`, `youtube.com/shorts/<id>`, `youtu.be/<id>`; `facebook.com/reel/<id>/`,
-`facebook.com/(<username>/)videos/<id>/`, `facebook.com/watch/?v=<id>`, `fb.watch/<code>`; or
+`facebook.com/(<username>/)videos/<id>/`, `facebook.com/watch/?v=<id>`, `facebook.com/share/(r|v)/<code>/`,
+`fb.watch/<code>`; or
 `tiktok.com/@<username>/video/<id>/`, `vm.tiktok.com/<code>`, `vt.tiktok.com/<code>`. Tracking
 parameters such as `?igsh=` or `&t=` are dropped.
 
@@ -118,8 +128,12 @@ parameters such as `?igsh=` or `&t=` are dropped.
 |---|---|
 | `IGT_OUT_ROOT` | Output directory for `--out` and relative `--out-file`. Optional (default: current directory). Must be outside this repository. |
 | `IGT_COOKIES_FILE` | Netscape-format cookies file (same as `--cookies`). Must be outside this repository. |
+| `ANTHROPIC_API_KEY` | API key for `--idea-llm` with the `anthropic` provider. Read from the environment only, never from argv. |
+| `OLLAMA_HOST` | Ollama server for `--llm-provider ollama` (default `localhost:11434`). |
 
 Cookies are credentials — keep the file out of the repo.
+Keep API keys in a file outside the repo and load them with `set -a; source ~/keys/anthropic.key; set +a` (plain
+`source` sets shell variables that `igt` cannot see unless the file uses `export`).
 
 ## Exit codes
 
