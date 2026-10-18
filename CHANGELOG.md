@@ -29,6 +29,10 @@ All notable changes to this project are documented here. Format follows
   prefix and "| Author" suffix, is cut to the first sentence, and is capped at 100 characters.
 
 ### Changed
+- Open questions are grouped into core functionality, technical stack, scale and security, and scope and
+  phasing; the requirements checklist gains a Given/When/Then acceptance-criteria item.
+- `--idea-llm` prompt asks the model to tie requirements to the material, tag unsupported items
+  `[ASSUMPTION]`, avoid vague phrasing, add acceptance criteria, and write a "Follow-up questions" section.
 - The output directory for `--out` and relative `--out-file` is `$IGT_OUT_ROOT` if set, otherwise the
   current directory. Previously an unset `IGT_OUT_ROOT` was a configuration error (exit 3). A directory
   inside the repository is still rejected.

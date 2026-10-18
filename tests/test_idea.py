@@ -98,3 +98,19 @@ def test_long_title_is_cut_at_a_word_boundary():
 
 def test_short_title_is_untouched():
     assert to_idea(make()).startswith("# Project idea: Embedding Gemma\n")
+
+
+def test_open_questions_grouped_into_four_categories():
+    questions = to_idea(make()).split("## Open questions")[1].split("## Brainstorm")[0]
+    for heading in (
+        "### Core functionality and business logic",
+        "### Technical stack and constraints",
+        "### Scale, performance and security",
+        "### Scope and phasing",
+    ):
+        assert heading in questions
+    assert questions.count("\n- ") >= 8
+
+
+def test_checklist_asks_for_given_when_then_acceptance_criteria():
+    assert "- [ ] Acceptance criteria (Given/When/Then)" in to_idea(make())

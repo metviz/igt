@@ -147,3 +147,12 @@ def test_make_writer_picks_provider_and_default_model():
     assert make_writer("ollama", None, {})._model == OLLAMA_DEFAULT_MODEL
     assert isinstance(make_writer("anthropic", "x", {}), AnthropicIdeaWriter)
     assert make_writer("anthropic", "x", {})._model == "x"
+
+
+def test_system_prompt_demands_traceability_and_follow_up_questions():
+    from igt.llm import _SYSTEM
+
+    assert "[ASSUMPTION]" in _SYSTEM
+    assert "Follow-up questions" in _SYSTEM
+    assert "Given/When/Then" in _SYSTEM
+    assert "handles errors properly" in _SYSTEM

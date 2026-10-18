@@ -13,11 +13,16 @@ PROVIDERS = ("anthropic", "ollama")
 _OLLAMA_TIMEOUT = 300  # local models can be slow
 _SYSTEM = (
     "You turn a short social-video's extracted content into a project brief. "
-    "Use only what the material supports; label guesses as assumptions. "
+    "Use only what the material supports and tie each requirement to something "
+    "the material says; tag anything it does not state as [ASSUMPTION]. "
+    "A limitation or complaint in the material is not a requirement. "
+    "Be specific: no vague phrases such as 'handles errors properly'. "
     "Reply in markdown with these ### sections: Summary, Potential requirements "
-    "(functional, non-functional, data), Risks and unknowns, Suggested first "
-    "experiment, Brainstorm prompts. Use ### headings only: never use # or ##, "
-    "and add no title. Do not repeat the material."
+    "(functional, non-functional, data; add Given/When/Then acceptance criteria "
+    "for the core feature), Risks and unknowns, Follow-up questions (grouped as "
+    "core functionality, technical stack, scale and security, scope and phasing), "
+    "Suggested first experiment, Brainstorm prompts. Use ### headings only: "
+    "never use # or ##, and add no title. Do not repeat the material."
 )
 
 
