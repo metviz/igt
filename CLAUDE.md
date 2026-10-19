@@ -3,7 +3,7 @@
 `igt <url>` downloads an Instagram reel/post's, YouTube video's, Facebook reel/video's or TikTok video's
 audio (yt-dlp) and transcribes it locally (faster-whisper).
 Output: `txt | srt | json | md | idea` to stdout, or to a file with `--out` / `--out-file PATH`.
-Extras: `--mp3` (save audio), `--ocr` (on-screen text), `--format idea` (project-idea brief) and `--idea-llm`
+Extras: `--mp3` (save audio), `--keep-video DIR` (save the video), `--ocr` (on-screen text), `--format idea` (project-idea brief) and `--idea-llm`
 (LLM analysis). Scope is extraction plus idea/prompt/brainstorm generation; no media indexing or search. Standalone project; it began as the CLI
 counterpart of a Chrome extension (separate repo) but shares no code with it. History: `docs/plans/`.
 
@@ -33,7 +33,7 @@ src/igt/
   ocr.py         TextExtractor protocol; ffmpeg frame sampling + tesseract or rapidocr (default); fuzzy/exact/off merge
   llm.py         IdeaWriter protocol; AnthropicIdeaWriter, OllamaIdeaWriter (stdlib REST), make_writer()
   transcribe.py  Transcriber protocol, FasterWhisperTranscriber (lazy model load)
-  pipeline.py    generate(): parse -> download -> transcribe (+ OCR) -> Transcript; save_audio() for --mp3; temp dir always removed
+  pipeline.py    generate(): parse -> download -> transcribe (+ OCR, optional keep= video callback) -> Transcript; save_audio() for --mp3; temp dir always removed
   cli.py         argparse + main(); maps IgtError.exit_code to the process exit code
   errors.py      IgtError hierarchy, one exit_code per class
 tests/           fakes.py (FakeDownloader/FakeTranscriber/FakeExtractor), one test_*.py per module, integration/ (opt-in)
@@ -48,6 +48,8 @@ Design: pure core + I/O seams (`Downloader`, `Transcriber`, `TextExtractor`, `Id
   `--out`/relative `--out-file` use `IGT_OUT_ROOT`, else the current directory (changed 2026-10-02 at the user's request: was a hard failure when unset); either is rejected if inside the repo. Cookies (`--cookies`, `IGT_COOKIES_FILE`) are
   credentials: must exist and be outside the repo. Guarded by `config.outside()`; tests pin it.
 - Output is validated (dir creatable + writable, target not a symlink) **before** any download.
+  `--keep-video DIR` follows the same rules (relative DIR under the output dir, never in the repo); the saved
+  path goes to stderr, not stdout.
 - Secrets/cookies never go in the repo, argv values that are secrets, or git. `.gitignore` is defence in
   depth only — no `!` re-include rules.
 - stdout carries only the result; errors go to stderr as `error: <message>`; no tracebacks for expected failures.
@@ -57,7 +59,7 @@ Design: pure core + I/O seams (`Downloader`, `Transcriber`, `TextExtractor`, `Id
 - Optional-tool checks (`extractor.check()`, `idea_writer.check()`) run **before** the download.
 - LLM keys come from the environment only (`ANTHROPIC_API_KEY`), never argv. `--idea-llm` with the anthropic
   provider sends extracted text to Anthropic; ollama stays local (`OLLAMA_HOST`).
-- TDD: failing test first, watch it fail, minimal code, keep ≥80% coverage (currently ~98%, 235 tests).
+- TDD: failing test first, watch it fail, minimal code, keep ≥80% coverage (currently ~97%, 248 tests).
 - Immutable data (frozen dataclasses, tuples). Small files. No `print` outside `cli.py`.
 - Commit messages: `<type>: <description>`; body ends with `developed with the help of AI assistance`.
   Never add `Co-Authored-By` or `Claude-Session` trailers.

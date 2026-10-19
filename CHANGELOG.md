@@ -16,6 +16,8 @@ All notable changes to this project are documented here. Format follows
   (default; optional extra: `pip install 'igt[rapidocr]'`) or `tesseract` (system binary).
   `--ocr-merge {fuzzy,exact,off}` controls how repeated text is collapsed (default `fuzzy`).
   A silent video with readable on-screen text no longer fails with "no speech".
+- `--keep-video DIR` also saves the downloaded video (up to 720p) as `DIR/<shortcode>.<ext>` and prints the
+  path to stderr. Relative `DIR` is under the output directory; never inside the repo. Not combinable with `--mp3`.
 - `--format idea` writes a project-idea brief (requirements checklist, open questions, brainstorm prompts
   embedding the extracted content). Template-based; no LLM call. `--out` saves it as `<shortcode>.md`.
 - `--idea-llm` (with `--format idea`) adds an LLM-written analysis via Anthropic (`--llm-model`; optional

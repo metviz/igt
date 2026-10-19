@@ -2,6 +2,7 @@ import re
 import shutil
 import tempfile
 from pathlib import Path
+from typing import Callable
 
 from igt.download import Downloader
 from igt.errors import NoSpeechError
@@ -18,11 +19,14 @@ def generate(
     transcriber: Transcriber,
     language: str = "auto",
     extractor: TextExtractor | None = None,
+    keep: Callable[[Path], None] | None = None,
 ) -> Transcript:
     parsed = parse_video_url(url)
     # Audio scratch lives in the system temp dir, never in the repo; always removed.
     with tempfile.TemporaryDirectory(prefix="igt-") as tmp:
         downloaded = downloader.fetch(parsed.canonical, Path(tmp))
+        if keep:  # with video mode the "audio" file is the whole video
+            keep(downloaded.audio_path)
         segments, detected = transcriber.transcribe(downloaded.audio_path, language)
         # with --ocr the "audio" file is the whole video, so frames can be read from it
         on_screen = extractor.extract(downloaded.audio_path) if extractor else ()

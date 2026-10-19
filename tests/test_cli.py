@@ -461,3 +461,59 @@ def test_idea_llm_api_error_exits_6():
 def test_llm_provider_option_choices():
     with pytest.raises(SystemExit):
         run_llm([URL, "--format", "idea", "--idea-llm", "--llm-provider", "nope"], FakeWriter())
+
+
+def test_keep_video_copies_download_to_dir_named_by_shortcode(tmp_path):
+    code, out, err = run(
+        [URL, "--keep-video", str(tmp_path / "vids")],
+        downloader=FakeDownloader(),
+    )
+    kept = tmp_path.resolve() / "vids" / "ABC123xyz.m4a"
+    assert code == 0 and out == "hello\nworld\n"
+    assert kept.read_bytes() == b"audio"
+    assert err.strip() == f"saved video: {kept}"
+
+
+def test_keep_video_relative_dir_uses_out_root(tmp_path):
+    code, _, _ = run(
+        [URL, "--keep-video", "v"], env={"IGT_OUT_ROOT": str(tmp_path)}
+    )
+    assert code == 0 and (tmp_path.resolve() / "v" / "ABC123xyz.m4a").exists()
+
+
+def test_keep_video_inside_repo_rejected_before_download():
+    dl = FakeDownloader()
+    code, _, err = run([URL, "--keep-video", str(REPO_ROOT / "vids")], downloader=dl)
+    assert code == 3 and "inside the repository" in err and dl.calls == 0
+
+
+def test_keep_video_cannot_combine_with_mp3(capsys):
+    with pytest.raises(SystemExit) as exc:
+        main([URL, "--keep-video", "v", "--mp3"])
+    assert exc.value.code == 2
+    assert "--keep-video cannot be combined with --mp3" in capsys.readouterr().err
+
+
+def test_keep_video_symlink_target_refused(tmp_path):
+    (tmp_path / "ABC123xyz.m4a").symlink_to(tmp_path / "elsewhere")
+    code, _, err = run([URL, "--keep-video", str(tmp_path)])
+    assert code == 3 and "symlink" in err
+
+
+def test_keep_video_requests_video_download(monkeypatch, tmp_path):
+    seen = {}
+
+    class Rec(FakeDownloader):
+        def __init__(self, cookies=None, **kw):
+            super().__init__()
+            seen.update(kw)
+
+    monkeypatch.setattr("igt.cli.YtDlpDownloader", Rec)
+    code = main(
+        [URL, "--keep-video", str(tmp_path)],
+        env={},
+        transcriber=FakeTranscriber(),
+        stdout=io.StringIO(),
+        stderr=io.StringIO(),
+    )
+    assert code == 0 and seen.get("video") is True

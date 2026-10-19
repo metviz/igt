@@ -105,3 +105,15 @@ def test_silent_video_with_on_screen_text_is_not_an_error():
         extractor=FakeExtractor([(0.0, "ONLY TEXT")]),
     )
     assert t.segments == () and t.on_screen[0].text == "ONLY TEXT"
+
+
+def test_keep_callback_gets_the_downloaded_file_before_cleanup():
+    seen = []
+
+    def keep(path):
+        seen.append((path.name, path.read_bytes()))
+
+    dl = FakeDownloader()
+    generate(URL, downloader=dl, transcriber=FakeTranscriber(), keep=keep)
+    assert seen == [("a.m4a", b"audio")]
+    assert not dl.dest.exists()

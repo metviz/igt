@@ -56,6 +56,7 @@ igt URL --out-file notes.md --format md                        # writes ./notes.
 igt URL --mp3                                                  # audio only: writes ./ABC123xyz.mp3, no transcription
 igt URL --format idea --out                                    # project-idea brief: requirements stubs + brainstorm prompts (see below)
 igt URL --ocr --format md                                      # also read on-screen text (see On-screen text)
+igt URL --keep-video ~/videos                                  # also keep the video: ~/videos/<shortcode>.<ext> (path on stderr)
 igt URL --format idea --idea-llm --llm-provider ollama         # add an LLM analysis, run locally (see Project-idea brief)
 ```
 

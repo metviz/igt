@@ -1,5 +1,6 @@
 import argparse
 import os
+import shutil
 import sys
 from pathlib import Path
 from typing import Mapping, Sequence, TextIO
@@ -93,6 +94,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="also read on-screen text from video frames (md/json output); needs ffmpeg + an OCR engine",
     )
+    p.add_argument(
+        "--keep-video",
+        metavar="DIR",
+        help=(
+            "also save the downloaded video (up to 720p) as DIR/<shortcode>.<ext>; relative DIR "
+            "is under the output directory, never inside the repo; the path is printed to stderr"
+        ),
+    )
     p.add_argument("--ocr-engine", choices=ENGINES, default="rapidocr")
     p.add_argument(
         "--ocr-every",
@@ -142,14 +151,18 @@ def _resolve_out(
     return full.parent, full.name
 
 
-def _prepare_target(root: Path, name: str) -> Path:
-    """Fail fast (before download/transcribe) if the output can't be written safely."""
+def _prepare_dir(root: Path) -> None:
     try:
         root.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
         raise ConfigError(f"cannot use output directory {root}: {exc}") from exc
     if not os.access(root, os.W_OK):
         raise ConfigError(f"output directory is not writable: {root}")
+
+
+def _prepare_target(root: Path, name: str) -> Path:
+    """Fail fast (before download/transcribe) if the output can't be written safely."""
+    _prepare_dir(root)
     target = root / name
     if target.is_dir():
         raise ConfigError(f"output path is a directory: {target}")
@@ -166,6 +179,7 @@ def _run(
     extractor: TextExtractor | None,
     idea_writer: IdeaWriter | None,
     stdout: TextIO,
+    stderr: TextIO,
 ) -> None:
     parsed = parse_video_url(args.url)
     if args.cookies_from:  # an explicit browser session beats any cookies file
@@ -184,6 +198,22 @@ def _run(
         ext = "mp3" if args.mp3 else {"idea": "md"}.get(args.format, args.format)
         root, name = _resolve_out(args, env, f"{parsed.shortcode}.{ext}")
         target = _prepare_target(root, name)
+    keep = None
+    if args.keep_video:
+        vdir = Path(args.keep_video).expanduser()
+        if not vdir.is_absolute():
+            vdir = out_base(env, REPO_ROOT) / vdir
+        vdir = outside(vdir, REPO_ROOT, "--keep-video")
+        _prepare_dir(vdir)
+
+        def keep(video: Path) -> None:
+            dest = _prepare_target(vdir, f"{parsed.shortcode}{video.suffix}")
+            try:
+                shutil.copyfile(video, dest)
+            except OSError as exc:
+                raise ConfigError(f"cannot write {dest}: {exc}") from exc
+            stderr.write(f"saved video: {dest}\n")
+
     if args.mp3:
         assert target is not None
         save_audio(
@@ -214,11 +244,12 @@ def _run(
         or YtDlpDownloader(
             cookies,
             cookies_from_browser=args.cookies_from,
-            **({"video": True} if args.ocr else {}),
+            **({"video": True} if args.ocr or args.keep_video else {}),
         ),
         extractor=extractor,
         transcriber=transcriber or FasterWhisperTranscriber(args.model),
         language=args.language,
+        keep=keep,
     )
     if args.idea_llm:
         rendered = to_idea(transcript, idea_writer.write(transcript))
@@ -249,12 +280,16 @@ def main(
     args = parser.parse_args(argv)
     if args.ocr and args.mp3:
         parser.error("--ocr cannot be combined with --mp3")
+    if args.keep_video and args.mp3:
+        parser.error("--keep-video cannot be combined with --mp3")
     if args.idea_llm and args.format != "idea":
         parser.error("--idea-llm requires --format idea")
     env = os.environ if env is None else env
     stdout, stderr = stdout or sys.stdout, stderr or sys.stderr
     try:
-        _run(args, env, downloader, transcriber, extractor, idea_writer, stdout)
+        _run(
+            args, env, downloader, transcriber, extractor, idea_writer, stdout, stderr
+        )
         return 0
     except IgtError as exc:
         stderr.write(f"error: {exc}\n")
