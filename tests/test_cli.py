@@ -517,3 +517,41 @@ def test_keep_video_requests_video_download(monkeypatch, tmp_path):
         stderr=io.StringIO(),
     )
     assert code == 0 and seen.get("video") is True
+
+
+def test_keep_video_copy_failure_is_a_config_error(monkeypatch, tmp_path):
+    def boom(*_a, **_k):
+        raise OSError("disk full")
+
+    monkeypatch.setattr("igt.cli.shutil.copyfile", boom)
+    code, _, err = run([URL, "--keep-video", str(tmp_path)])
+    assert code == 3 and "cannot write" in err and "disk full" in err
+
+
+def test_out_write_failure_is_a_config_error(monkeypatch, tmp_path):
+    def boom(*_a, **_k):
+        raise OSError("disk full")
+
+    monkeypatch.setattr("pathlib.Path.write_text", boom)
+    code, _, err = run([URL, "--out"], env={"IGT_OUT_ROOT": str(tmp_path)})
+    assert code == 3 and "cannot write" in err
+
+
+def test_ocr_tool_check_runs_before_download():
+    from igt.errors import ConfigError
+
+    class Missing:
+        def check(self):
+            raise ConfigError("tesseract not found")
+
+    dl = FakeDownloader()
+    code, _, err = run([URL, "--ocr"], downloader=dl, extractor=Missing())
+    assert code == 3 and "tesseract not found" in err and dl.calls == 0
+
+
+@pytest.mark.parametrize("value", ["abc", "0", "-2"])
+def test_ocr_every_must_be_a_positive_number(value, capsys):
+    with pytest.raises(SystemExit) as exc:
+        main([URL, "--ocr-every", value])
+    assert exc.value.code == 2
+    assert "positive" in capsys.readouterr().err

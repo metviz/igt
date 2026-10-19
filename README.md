@@ -56,7 +56,7 @@ igt URL --out-file notes.md --format md                        # writes ./notes.
 igt URL --mp3                                                  # audio only: writes ./ABC123xyz.mp3, no transcription
 igt URL --format idea --out                                    # project-idea brief: requirements stubs + brainstorm prompts (see below)
 igt URL --ocr --format md                                      # also read on-screen text (see On-screen text)
-igt URL --keep-video ~/videos                                  # also keep the video: ~/videos/<shortcode>.<ext> (path on stderr)
+igt URL --keep-video ~/videos                                  # also keep the video as ~/videos/<shortcode>.<ext> (see Saving output)
 igt URL --format idea --idea-llm --llm-provider ollama         # add an LLM analysis, run locally (see Project-idea brief)
 ```
 
@@ -101,6 +101,12 @@ By default the result goes to stdout. To write a file instead, use `--out` or `-
 | `--out` | `<shortcode>.<format>` (e.g. `ABC123xyz.md`) in the output directory |
 | `--out-file PATH` | `PATH`: relative to the output directory, or absolute |
 | `--mp3` | audio only, no transcription: `<shortcode>.mp3` (or `--out-file PATH`) in the output directory; needs `ffmpeg` |
+| `--keep-video DIR` | also keeps the downloaded video (up to 720p) as `DIR/<shortcode>.<ext>`; the transcript is produced as usual |
+
+`--keep-video` is separate from the result: `DIR` is a directory (relative paths are under the output directory),
+the file keeps whatever extension the site served (usually `.mp4`), an existing file of that name is
+overwritten, and the saved path is printed to **stderr** (`saved video: <path>`) so stdout still carries only
+the result. It cannot be combined with `--mp3`.
 
 The output directory is `$IGT_OUT_ROOT` if set, otherwise the **current directory**. Missing parent
 directories are created, the path is printed on success, and nothing is downloaded if the destination

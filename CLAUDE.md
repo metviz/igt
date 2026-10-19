@@ -48,8 +48,9 @@ Design: pure core + I/O seams (`Downloader`, `Transcriber`, `TextExtractor`, `Id
   `--out`/relative `--out-file` use `IGT_OUT_ROOT`, else the current directory (changed 2026-10-02 at the user's request: was a hard failure when unset); either is rejected if inside the repo. Cookies (`--cookies`, `IGT_COOKIES_FILE`) are
   credentials: must exist and be outside the repo. Guarded by `config.outside()`; tests pin it.
 - Output is validated (dir creatable + writable, target not a symlink) **before** any download.
-  `--keep-video DIR` follows the same rules (relative DIR under the output dir, never in the repo); the saved
-  path goes to stderr, not stdout.
+  `--keep-video DIR` follows the same path rules (relative DIR under the output dir, never in the repo; DIR
+  checked before the download). The target file's symlink/directory check can only run after the download,
+  because the extension comes from yt-dlp. The saved path goes to stderr, not stdout.
 - Secrets/cookies never go in the repo, argv values that are secrets, or git. `.gitignore` is defence in
   depth only — no `!` re-include rules.
 - stdout carries only the result; errors go to stderr as `error: <message>`; no tracebacks for expected failures.
@@ -59,7 +60,7 @@ Design: pure core + I/O seams (`Downloader`, `Transcriber`, `TextExtractor`, `Id
 - Optional-tool checks (`extractor.check()`, `idea_writer.check()`) run **before** the download.
 - LLM keys come from the environment only (`ANTHROPIC_API_KEY`), never argv. `--idea-llm` with the anthropic
   provider sends extracted text to Anthropic; ollama stays local (`OLLAMA_HOST`).
-- TDD: failing test first, watch it fail, minimal code, keep ≥80% coverage (currently ~97%, 248 tests).
+- TDD: failing test first, watch it fail, minimal code, keep ≥80% coverage (currently ~99%, 255 tests).
 - Immutable data (frozen dataclasses, tuples). Small files. No `print` outside `cli.py`.
 - Commit messages: `<type>: <description>`; body ends with `developed with the help of AI assistance`.
   Never add `Co-Authored-By` or `Claude-Session` trailers.

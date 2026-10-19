@@ -156,3 +156,39 @@ def test_system_prompt_demands_traceability_and_follow_up_questions():
     assert "Follow-up questions" in _SYSTEM
     assert "Given/When/Then" in _SYSTEM
     assert "handles errors properly" in _SYSTEM
+
+
+def test_http_json_round_trips_against_a_real_local_server():
+    import json
+    import threading
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    from igt.llm import _http_json
+
+    class Echo(BaseHTTPRequestHandler):
+        def _reply(self, body):
+            data = json.dumps(body).encode()
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def do_GET(self):
+            self._reply({"method": "GET"})
+
+        def do_POST(self):
+            size = int(self.headers["Content-Length"])
+            self._reply({"method": "POST", "got": json.loads(self.rfile.read(size))})
+
+        def log_message(self, *_a):
+            pass
+
+    server = HTTPServer(("127.0.0.1", 0), Echo)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        assert _http_json(base) == {"method": "GET"}
+        assert _http_json(base, {"a": 1}) == {"method": "POST", "got": {"a": 1}}
+    finally:
+        server.shutdown()
+        server.server_close()

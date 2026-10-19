@@ -90,17 +90,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="save the audio as <shortcode>.mp3 (or --out-file PATH) instead of transcribing; needs ffmpeg",
     )
     p.add_argument(
-        "--ocr",
-        action="store_true",
-        help="also read on-screen text from video frames (md/json output); needs ffmpeg + an OCR engine",
-    )
-    p.add_argument(
         "--keep-video",
         metavar="DIR",
         help=(
             "also save the downloaded video (up to 720p) as DIR/<shortcode>.<ext>; relative DIR "
             "is under the output directory, never inside the repo; the path is printed to stderr"
         ),
+    )
+    p.add_argument(
+        "--ocr",
+        action="store_true",
+        help="also read on-screen text from video frames (md/json output); needs ffmpeg + an OCR engine",
     )
     p.add_argument("--ocr-engine", choices=ENGINES, default="rapidocr")
     p.add_argument(
