@@ -390,7 +390,9 @@ def test_ocr_merge_rejects_unknown_mode():
 
 
 def test_idea_format_out_is_saved_as_md(tmp_path):
-    code, out, _ = run([URL, "--format", "idea", "--out"], env={"IGT_OUT_ROOT": str(tmp_path)})
+    code, out, _ = run(
+        [URL, "--format", "idea", "--out"], env={"IGT_OUT_ROOT": str(tmp_path)}
+    )
     assert code == 0
     (f,) = tmp_path.iterdir()
     assert f.suffix == ".md"
@@ -460,7 +462,10 @@ def test_idea_llm_api_error_exits_6():
 
 def test_llm_provider_option_choices():
     with pytest.raises(SystemExit):
-        run_llm([URL, "--format", "idea", "--idea-llm", "--llm-provider", "nope"], FakeWriter())
+        run_llm(
+            [URL, "--format", "idea", "--idea-llm", "--llm-provider", "nope"],
+            FakeWriter(),
+        )
 
 
 def test_keep_video_copies_download_to_dir_named_by_shortcode(tmp_path):
@@ -475,9 +480,7 @@ def test_keep_video_copies_download_to_dir_named_by_shortcode(tmp_path):
 
 
 def test_keep_video_relative_dir_uses_out_root(tmp_path):
-    code, _, _ = run(
-        [URL, "--keep-video", "v"], env={"IGT_OUT_ROOT": str(tmp_path)}
-    )
+    code, _, _ = run([URL, "--keep-video", "v"], env={"IGT_OUT_ROOT": str(tmp_path)})
     assert code == 0 and (tmp_path.resolve() / "v" / "ABC123xyz.m4a").exists()
 
 
@@ -555,3 +558,26 @@ def test_ocr_every_must_be_a_positive_number(value, capsys):
         main([URL, "--ocr-every", value])
     assert exc.value.code == 2
     assert "positive" in capsys.readouterr().err
+
+
+def test_image_post_with_ocr_reads_slides(tmp_path):
+    from igt.errors import NoVideoError
+    from tests.fakes import FakeExtractor, FakeImageFetcher
+
+    out, err = io.StringIO(), io.StringIO()
+    code = main(
+        [URL, "--ocr", "--format", "md"], env={}, stdout=out, stderr=err,
+        downloader=FakeDownloader(fail=NoVideoError("no video")),
+        transcriber=FakeTranscriber(), extractor=FakeExtractor([(0, "Slide A")]),
+        image_fetcher=FakeImageFetcher(["x"]),
+    )  # fmt: skip
+    assert code == 0 and "[slide 1] Slide A" in out.getvalue()
+
+
+def test_image_post_without_ocr_hints_at_ocr():
+    from igt.errors import NoVideoError
+
+    code, _, err = run(
+        [URL], downloader=FakeDownloader(fail=NoVideoError("no video --ocr"))
+    )
+    assert code == 4 and "--ocr" in err

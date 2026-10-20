@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Protocol, Sequence
 
 from igt.errors import ConfigError, DownloadError
 from igt.models import OnScreenText
@@ -15,6 +15,7 @@ MERGE_MODES = ("fuzzy", "exact", "off")
 
 class TextExtractor(Protocol):
     def extract(self, video: Path) -> tuple[OnScreenText, ...]: ...
+    def extract_images(self, images: Sequence[Path]) -> tuple[OnScreenText, ...]: ...
 
 
 def _norm(text: str) -> str:
@@ -62,6 +63,13 @@ class _FrameExtractor:
 
     def _read(self, frame: Path) -> str:
         raise NotImplementedError
+
+    def extract_images(self, images: Sequence[Path]) -> tuple[OnScreenText, ...]:
+        """Read still images; `start` is the 0-based slide index. Slides are never merged."""
+        found = (
+            OnScreenText(float(i), _norm(self._read(p))) for i, p in enumerate(images)
+        )
+        return tuple(o for o in found if len(re.findall(r"\w", o.text)) >= 3)
 
     def extract(self, video: Path) -> tuple[OnScreenText, ...]:
         self.check()

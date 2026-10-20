@@ -62,3 +62,31 @@ class FakeExtractor:
         if self.raises:
             raise self.raises
         return self.items
+
+    def extract_images(self, images):
+        self.calls += 1
+        self.images = tuple(images)
+        if self.raises:
+            raise self.raises
+        return self.items
+
+
+class FakeImageFetcher:
+    def __init__(self, texts=(), creator="", fail: Exception | None = None):
+        self.texts, self.creator, self.fail = tuple(texts), creator, fail
+        self.shortcode: str | None = None
+        self.calls = 0
+
+    def fetch(self, shortcode: str, dest: Path):
+        from igt.images import ImagePost
+
+        self.calls += 1
+        self.shortcode = shortcode
+        if self.fail:
+            raise self.fail
+        paths = []
+        for i, _ in enumerate(self.texts, 1):
+            p = dest / f"slide{i:02}.jpg"
+            p.write_bytes(b"img")
+            paths.append(p)
+        return ImagePost(tuple(paths), self.creator)

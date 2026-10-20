@@ -16,6 +16,10 @@ class DownloadError(IgtError):
     exit_code = 4
 
 
+class NoVideoError(DownloadError):
+    """The post has no video (an image post); --ocr can still read its slides."""
+
+
 class TranscribeError(IgtError):
     exit_code = 5
 

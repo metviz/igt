@@ -12,6 +12,7 @@ from igt.errors import ConfigError, IgtError
 from igt.formatters import FORMATS
 from igt.ocr import ENGINES, MERGE_MODES, TextExtractor, make_extractor
 from igt.idea import to_idea
+from igt.images import EmbedImageFetcher, ImageFetcher
 from igt.llm import PROVIDERS, IdeaWriter, make_writer
 from igt.pipeline import generate, save_audio
 from igt.transcribe import FasterWhisperTranscriber, Transcriber
@@ -178,6 +179,7 @@ def _run(
     transcriber: Transcriber | None,
     extractor: TextExtractor | None,
     idea_writer: IdeaWriter | None,
+    image_fetcher: ImageFetcher | None,
     stdout: TextIO,
     stderr: TextIO,
 ) -> None:
@@ -250,6 +252,7 @@ def _run(
         transcriber=transcriber or FasterWhisperTranscriber(args.model),
         language=args.language,
         keep=keep,
+        images=(image_fetcher or EmbedImageFetcher()) if extractor else None,
     )
     if args.idea_llm:
         rendered = to_idea(transcript, idea_writer.write(transcript))
@@ -273,6 +276,7 @@ def main(
     transcriber: Transcriber | None = None,
     extractor: TextExtractor | None = None,
     idea_writer: IdeaWriter | None = None,
+    image_fetcher: ImageFetcher | None = None,
     stdout: TextIO | None = None,
     stderr: TextIO | None = None,
 ) -> int:
@@ -288,7 +292,15 @@ def main(
     stdout, stderr = stdout or sys.stdout, stderr or sys.stderr
     try:
         _run(
-            args, env, downloader, transcriber, extractor, idea_writer, stdout, stderr
+            args,
+            env,
+            downloader,
+            transcriber,
+            extractor,
+            idea_writer,
+            image_fetcher,
+            stdout,
+            stderr,
         )
         return 0
     except IgtError as exc:

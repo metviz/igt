@@ -90,7 +90,9 @@ def test_yt_dlp_errors_are_explained(tmp_path, msg, expect):
 
 def test_ytdlp_logger_is_silent_so_igt_owns_stderr(tmp_path, capsys):
     seen = {}
-    YtDlpDownloader(ydl_factory=factory(video(), seen=seen)).fetch("https://u", tmp_path)
+    YtDlpDownloader(ydl_factory=factory(video(), seen=seen)).fetch(
+        "https://u", tmp_path
+    )
     for level in ("debug", "info", "warning", "error"):
         getattr(seen["logger"], level)("noise")
     assert capsys.readouterr() == ("", "")
@@ -156,7 +158,9 @@ def test_mp3_adds_ffmpeg_extract_audio_postprocessor(tmp_path):
 
 def test_no_postprocessors_by_default(tmp_path):
     seen = {}
-    YtDlpDownloader(ydl_factory=factory(video(), seen=seen)).fetch("https://u", tmp_path)
+    YtDlpDownloader(ydl_factory=factory(video(), seen=seen)).fetch(
+        "https://u", tmp_path
+    )
     assert "postprocessors" not in seen
 
 
@@ -166,3 +170,33 @@ def test_video_mode_requests_a_video_format(tmp_path):
         "https://u", tmp_path
     )
     assert "bestaudio" not in seen["format"] and "best" in seen["format"]
+
+
+def test_no_video_is_a_distinct_error_with_ocr_hint(tmp_path):
+    from igt.errors import NoVideoError
+
+    info = {"_type": "playlist", "entries": [None]}
+    with pytest.raises(NoVideoError, match="--ocr"):
+        YtDlpDownloader(ydl_factory=factory(info)).fetch("https://u", tmp_path)
+
+
+def test_ytdlp_no_video_formats_maps_to_no_video_error(tmp_path):
+    import yt_dlp
+
+    from igt.errors import NoVideoError
+
+    class Boom:
+        def __init__(self, opts): ...
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def extract_info(self, url, download):
+            raise yt_dlp.utils.DownloadError(
+                "ERROR: [Instagram] X: No video formats found!"
+            )
+
+    with pytest.raises(NoVideoError):
+        YtDlpDownloader(ydl_factory=Boom).fetch("https://u", tmp_path)

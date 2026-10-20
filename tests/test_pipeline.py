@@ -117,3 +117,49 @@ def test_keep_callback_gets_the_downloaded_file_before_cleanup():
     generate(URL, downloader=dl, transcriber=FakeTranscriber(), keep=keep)
     assert seen == [("a.m4a", b"audio")]
     assert not dl.dest.exists()
+
+
+def _no_video_dl():
+    from igt.errors import NoVideoError
+
+    return FakeDownloader(fail=NoVideoError("no video"))
+
+
+def test_image_post_falls_back_to_slide_ocr():
+    from tests.fakes import FakeExtractor, FakeImageFetcher
+
+    ex = FakeExtractor([(0, "Prompt one"), (1, "Prompt two")])
+    imgs = FakeImageFetcher(["a", "b"], creator="gptprompts.ai")
+    tr = FakeTranscriber()
+    t = generate(
+        URL.replace("reel", "p"), downloader=_no_video_dl(), transcriber=tr,
+        extractor=ex, images=imgs,
+    )  # fmt: skip
+    assert imgs.shortcode == "ABC123xyz"
+    assert (t.slides, t.segments, t.creator, t.platform) == (
+        True, (), "gptprompts.ai", "instagram",
+    )  # fmt: skip
+    assert [o.text for o in t.on_screen] == ["Prompt one", "Prompt two"]
+    assert tr.seen_language is None  # nothing to transcribe
+    assert not imgs.calls == 0 and not ex.images[0].exists()  # temp dir removed
+
+
+def test_no_video_without_ocr_or_fetcher_still_raises():
+    from igt.errors import NoVideoError
+    from tests.fakes import FakeExtractor, FakeImageFetcher
+
+    for kw in ({}, {"extractor": FakeExtractor()}, {"images": FakeImageFetcher()}):
+        with pytest.raises(NoVideoError):
+            generate(
+                URL, downloader=_no_video_dl(), transcriber=FakeTranscriber(), **kw
+            )
+
+
+def test_image_post_with_no_text_is_no_speech_error():
+    from tests.fakes import FakeExtractor, FakeImageFetcher
+
+    with pytest.raises(NoSpeechError, match="images"):
+        generate(
+            URL, downloader=_no_video_dl(), transcriber=FakeTranscriber(),
+            extractor=FakeExtractor(), images=FakeImageFetcher(["a"]),
+        )  # fmt: skip

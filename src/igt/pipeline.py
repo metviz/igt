@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Callable
 
 from igt.download import Downloader
-from igt.errors import NoSpeechError
+from igt.errors import NoSpeechError, NoVideoError
+from igt.images import ImageFetcher
 from igt.models import Transcript
 from igt.ocr import TextExtractor
 from igt.transcribe import Transcriber
@@ -20,11 +21,17 @@ def generate(
     language: str = "auto",
     extractor: TextExtractor | None = None,
     keep: Callable[[Path], None] | None = None,
+    images: ImageFetcher | None = None,
 ) -> Transcript:
     parsed = parse_video_url(url)
     # Audio scratch lives in the system temp dir, never in the repo; always removed.
     with tempfile.TemporaryDirectory(prefix="igt-") as tmp:
-        downloaded = downloader.fetch(parsed.canonical, Path(tmp))
+        try:
+            downloaded = downloader.fetch(parsed.canonical, Path(tmp))
+        except NoVideoError:
+            if not (images and extractor and parsed.platform == "instagram"):
+                raise
+            return _from_images(parsed, url, images, extractor, Path(tmp))
         if keep:  # with video mode the "audio" file is the whole video
             keep(downloaded.audio_path)
         segments, detected = transcriber.transcribe(downloaded.audio_path, language)
@@ -54,3 +61,18 @@ def save_audio(url: str, *, downloader: Downloader, target: Path) -> None:
     with tempfile.TemporaryDirectory(prefix="igt-") as tmp:
         downloaded = downloader.fetch(parsed.canonical, Path(tmp))
         shutil.copyfile(downloaded.audio_path, target)
+
+
+def _from_images(
+    parsed, url: str, images: ImageFetcher, extractor, tmp: Path
+) -> Transcript:
+    """Image post: OCR each slide instead of transcribing."""
+    post = images.fetch(parsed.shortcode, tmp)
+    on_screen = extractor.extract_images(post.paths)
+    if not on_screen:
+        raise NoSpeechError("no text found in this post's images")
+    by = f" by @{post.creator}" if post.creator else ""
+    return Transcript(
+        parsed.platform, f"Instagram post{by}", "image-ocr", "", (),
+        url=parsed.canonical, creator=post.creator, on_screen=on_screen, slides=True,
+    )  # fmt: skip

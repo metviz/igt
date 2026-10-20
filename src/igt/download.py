@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Protocol
 
-from igt.errors import DownloadError
+from igt.errors import DownloadError, NoVideoError
 
 
 @dataclass(frozen=True)
@@ -59,6 +59,12 @@ def _seconds(value: Any) -> float | None:
     return float(value) if ok else None
 
 
+_NO_VIDEO = (
+    "This post has no video to transcribe. "
+    "For an Instagram image post, add --ocr to read the slide text."
+)
+
+
 def _explain(message: str) -> str:
     low = message.lower()
     if "login" in low or "log in" in low or "cookies" in low:
@@ -68,8 +74,8 @@ def _explain(message: str) -> str:
         )
     if "429" in low or "rate-limit" in low or "rate limit" in low:
         return "Rate-limited. Wait and retry."
-    if "no video" in low:
-        return "This post has no video to transcribe."
+    if "no video" in low:  # also yt-dlp's "No video formats found!"
+        return _NO_VIDEO
     return message.splitlines()[0] if message else "download failed"
 
 
@@ -119,8 +125,9 @@ class YtDlpDownloader:
             with (self._factory or yt_dlp.YoutubeDL)(opts) as ydl:
                 info = ydl.extract_info(url, download=True)
         except yt_dlp.utils.DownloadError as exc:
-            raise DownloadError(_explain(str(exc))) from exc
+            msg = _explain(str(exc))
+            raise (NoVideoError if msg == _NO_VIDEO else DownloadError)(msg) from exc
         found = _first_download(info)
         if found is None:
-            raise DownloadError("This post has no video to transcribe.")
+            raise NoVideoError(_NO_VIDEO)
         return found

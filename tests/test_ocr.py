@@ -31,7 +31,6 @@ def ex(texts, every=2.0, which=lambda n: f"/usr/bin/{n}", merge="fuzzy", **kw):
     )
 
 
-
 def video(tmp_path):
     v = tmp_path / "v.mp4"
     v.write_bytes(b"v")
@@ -139,3 +138,15 @@ def test_exact_mode_keeps_jitter_variants_but_drops_identical(tmp_path):
 def test_off_mode_keeps_every_frame(tmp_path):
     out = ex(["Same text"] * 3, merge="off").extract(video(tmp_path))
     assert [o.start for o in out] == [0.0, 2.0, 4.0]
+
+
+def test_extract_images_reads_each_slide_without_ffmpeg(tmp_path):
+    imgs = []
+    for i in range(3):
+        p = tmp_path / f"s{i}.jpg"
+        p.write_bytes(b"jpg")
+        imgs.append(p)
+    runner = Runner(["Slide one", "", "Slide one"])  # blank slide skipped, repeat kept
+    out = TesseractExtractor(runner=runner, which=lambda n: n).extract_images(imgs)
+    assert [(o.start, o.text) for o in out] == [(0.0, "Slide one"), (2.0, "Slide one")]
+    assert all(c[0] == "tesseract" for c in runner.calls)

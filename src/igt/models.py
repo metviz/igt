@@ -28,3 +28,4 @@ class Transcript:
     caption: str = ""
     hashtags: tuple[str, ...] = ()
     on_screen: tuple[OnScreenText, ...] = ()
+    slides: bool = False  # image post: on_screen `start` is a slide index, not seconds

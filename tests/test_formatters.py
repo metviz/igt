@@ -116,7 +116,11 @@ def make_ocr():
     from igt.models import OnScreenText
 
     return Transcript(
-        "instagram", "T", "local-whisper", "en", (Segment(0, 1, "hi"),),
+        "instagram",
+        "T",
+        "local-whisper",
+        "en",
+        (Segment(0, 1, "hi"),),
         on_screen=(OnScreenText(3.0, "SALE 50%"),),
     )
 
@@ -135,3 +139,14 @@ def test_md_has_on_screen_section_only_when_present():
 def test_txt_and_srt_ignore_on_screen():
     t = make_ocr()
     assert to_txt(t) == "hi" and "SALE" not in to_srt(t)
+
+
+def test_md_labels_slides_and_skips_empty_transcript():
+    from igt.models import OnScreenText, Transcript
+
+    t = Transcript(
+        "instagram", "Post", "images", "", (), on_screen=(OnScreenText(1, "Two"),),
+        slides=True,
+    )  # fmt: skip
+    md = to_md(t)
+    assert "[slide 2] Two" in md and "## Transcript" not in md

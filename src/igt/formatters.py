@@ -78,9 +78,14 @@ def to_md(t: Transcript) -> str:
     cues = [
         f"[{_clock(s.start)}] {s.text.strip()}" for s in t.segments if s.text.strip()
     ]
-    parts.append("## Transcript\n\n" + "\n".join(cues))
+    if not t.slides:
+        parts.append("## Transcript\n\n" + "\n".join(cues))
     if t.on_screen:
-        shown = [f"[{_clock(o.start)}] {o.text}" for o in t.on_screen]
+        shown = [
+            f"[slide {int(o.start) + 1}] {o.text}" if t.slides
+            else f"[{_clock(o.start)}] {o.text}"
+            for o in t.on_screen
+        ]  # fmt: skip
         parts.append("## On-screen text\n\n" + "\n".join(shown))
     return "\n\n".join(parts) + "\n"
 
