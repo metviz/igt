@@ -190,3 +190,28 @@ Only download and transcribe content you have the right to use. You are responsi
 with each platform's Terms of Service, applicable copyright law, and any content owner's rights;
 this project provides no legal guidance on that. Provided under the MIT license, "as is," with no
 warranty of any kind — see [LICENSE](LICENSE).
+
+## User responsibilities
+
+By using `igt` you agree that you, not the authors, are responsible for how you use it:
+
+- **Rights and terms.** Only process content you own, have permission to use, or may lawfully
+  use (for example under fair use or a licence). Follow each platform's Terms of Service,
+  including any limits on automated access, and respect copyright and the creator's rights.
+  Transcripts, OCR text and generated briefs may be derivative works of the source.
+- **Image posts.** `--ocr` on an Instagram image post reads the public embed page of that post.
+  Use it only on posts you may access, and do not use it to get around access controls.
+- **Credentials.** Cookies (`--cookies`, `--cookies-from`) are your own login session. Use only
+  your own account, keep cookie files outside the repo, and never share them. Your account may be
+  rate-limited or suspended by a platform; that risk is yours.
+- **Privacy and data.** Do not process content that exposes other people's personal or sensitive
+  information unless you have a lawful basis. `--idea-llm` with the anthropic provider sends the
+  extracted text to Anthropic; use `--llm-provider ollama` to keep it local.
+- **Accuracy.** Speech-to-text and OCR make mistakes (names, numbers, all-caps text). Check
+  output before you quote, publish, or act on it.
+- **Fair use of platforms.** Do not use `igt` for bulk scraping, harassment, impersonation, or
+  anything unlawful, and keep your request rate low.
+- **Publishing.** You are responsible for anything you redistribute. Do not republish others'
+  content, transcripts, or media without permission.
+
+The authors accept no liability for misuse or for any loss arising from use of this software.
