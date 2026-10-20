@@ -7,7 +7,8 @@ Instagram reel/post's, YouTube video's, Facebook reel/video's or TikTok video's 
 [yt-dlp](https://github.com/yt-dlp/yt-dlp) and transcribes it locally with
 [faster-whisper](https://github.com/SYSTRAN/faster-whisper). No server needed.
 
-Beyond the transcript it can save the audio as mp3 (`--mp3`), read on-screen text from the video (`--ocr`),
+Beyond the transcript it can save the audio as mp3 (`--mp3`), read on-screen text from the video (`--ocr`,
+which also reads the slides of Instagram image posts),
 and turn what it extracted into a project-idea brief with requirements and brainstorm prompts
 (`--format idea`, optionally analysed by a local or cloud LLM with `--idea-llm`).
 
@@ -56,6 +57,8 @@ igt URL --out-file notes.md --format md                        # writes ./notes.
 igt URL --mp3                                                  # audio only: writes ./ABC123xyz.mp3, no transcription
 igt URL --format idea --out                                    # project-idea brief: requirements stubs + brainstorm prompts (see below)
 igt URL --ocr --format md                                      # also read on-screen text (see On-screen text)
+igt 'https://www.instagram.com/p/ABC123xyz/?img_index=2&utm=x' --ocr --format md  # image/carousel post: OCR each slide (see Image posts)
+igt IMAGE_POST_URL --ocr --format idea --out                   # project-idea brief from a slide post's text
 igt URL --keep-video ~/videos                                  # also keep the video as ~/videos/<shortcode>.<ext> (see Saving output)
 igt URL --format idea --idea-llm --llm-provider ollama         # add an LLM analysis, run locally (see Project-idea brief)
 ```
@@ -74,6 +77,28 @@ unchanged. A video with no speech but readable on-screen text succeeds. Not comb
 
 Both need `ffmpeg`. A missing tool exits 3 before anything is downloaded. Sampling is uncapped, so a
 small `--ocr-every` on a long video produces many frames.
+
+## Image posts
+
+An Instagram `/p/` post that is only images (a photo or a carousel) has no audio, so a plain `igt URL`
+exits 4 with "This post has no video to transcribe". Add `--ocr` and igt reads the slides instead:
+it fetches the post's images from its public embed page (no login) and OCRs each one.
+
+```bash
+igt 'https://www.instagram.com/p/ABC123xyz/' --ocr --format md --out-file slides.md
+```
+
+- Output is the "On-screen text" section with one `[slide N]` line per slide, plus the creator.
+  Use `md`, `json` or `idea`; `txt` and `srt` have no transcript for these posts and come out empty.
+- Quote the URL: an unquoted `&` (as in `?img_index=2&...`) backgrounds the command in your shell
+  and truncates the URL.
+- Slides are never merged, so a repeated slide appears twice. `--ocr-every`, `--ocr-merge`,
+  `--keep-video` and `--mp3` do not apply.
+- Mixed posts: video slides are skipped. Only still images are read. Private, login-walled or removed
+  posts fail with exit 4 ("no images found"); a post whose slides contain no readable text exits 5.
+- Images come only from Instagram's own image hosts. Caption and hashtags are not captured.
+- Only Instagram image posts are supported. YouTube, Facebook and TikTok need a video.
+- The embed page is not a stable API, so this may break if Instagram changes it.
 
 ## Project-idea brief
 
@@ -150,7 +175,7 @@ Keep API keys in a file outside the repo and load them with `set -a; source ~/ke
 | 2 | Bad URL or usage |
 | 3 | Configuration error (forbidden/unwritable output path, missing cookies file) |
 | 4 | Download failed (login required, no video, rate limit, ...) |
-| 5 | Transcription failed, or no speech detected |
+| 5 | Transcription failed, or no speech detected (image posts: no readable text) |
 | 6 | LLM request failed (`--idea-llm`) |
 | 130 | Interrupted (Ctrl-C) |
 
