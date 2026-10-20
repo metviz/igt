@@ -57,9 +57,9 @@ igt URL --out-file notes.md --format md                        # writes ./notes.
 igt URL --mp3                                                  # audio only: writes ./ABC123xyz.mp3, no transcription
 igt URL --format idea --out                                    # project-idea brief: requirements stubs + brainstorm prompts (see below)
 igt URL --ocr --format md                                      # also read on-screen text (see On-screen text)
-igt 'https://www.instagram.com/p/ABC123xyz/?img_index=2&utm=x' --ocr --format md  # image/carousel post: OCR each slide (see Image posts)
-igt IMAGE_POST_URL --ocr --keep-images slides                  # also save the slides as slides/<shortcode>-NN.jpg
-igt IMAGE_POST_URL --ocr --format idea --out                   # project-idea brief from a slide post's text
+igt 'https://www.instagram.com/p/DdvJOwDEw4Q/?img_index=2&psln=MWdhcG1tanlvZ2luYw%3D%3D' --ocr --format md  # image/carousel post: OCR each slide (see Image posts)
+igt https://www.instagram.com/p/DdvJOwDEw4Q/ --ocr --keep-images slides      # also save the slides as slides/<shortcode>-NN.jpg
+igt https://www.instagram.com/p/DdvJOwDEw4Q/ --ocr --format idea --out      # project-idea brief from a slide post's text
 igt URL --keep-video ~/videos                                  # also keep the video as ~/videos/<shortcode>.<ext> (see Saving output)
 igt URL --format idea --idea-llm --llm-provider ollama         # add an LLM analysis, run locally (see Project-idea brief)
 ```
@@ -86,7 +86,8 @@ exits 4 with "This post has no video to transcribe". Add `--ocr` and igt reads t
 it fetches the post's images from its public embed page (no login) and OCRs each one.
 
 ```bash
-igt 'https://www.instagram.com/p/ABC123xyz/' --ocr --format md --out-file slides.md
+igt --ocr --format md --keep-images slides --out-file home_interior_design_images.md \
+  'https://www.instagram.com/p/DdvJOwDEw4Q/?img_index=2&psln=MWdhcG1tanlvZ2luYw%3D%3D'
 ```
 
 - Output is the "On-screen text" section with one `[slide N]` line per slide, plus the creator.
