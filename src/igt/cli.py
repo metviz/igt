@@ -99,6 +99,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     p.add_argument(
+        "--keep-images",
+        metavar="DIR",
+        help=(
+            "with --ocr on an Instagram image post: also save the slides as DIR/<shortcode>-NN.jpg; "
+            "relative DIR is under the output directory, never inside the repo; paths go to stderr"
+        ),
+    )
+    p.add_argument(
         "--ocr",
         action="store_true",
         help="also read on-screen text from video frames (md/json output); needs ffmpeg + an OCR engine",
@@ -216,6 +224,23 @@ def _run(
                 raise ConfigError(f"cannot write {dest}: {exc}") from exc
             stderr.write(f"saved video: {dest}\n")
 
+    keep_images = None
+    if args.keep_images:
+        idir = Path(args.keep_images).expanduser()
+        if not idir.is_absolute():
+            idir = out_base(env, REPO_ROOT) / idir
+        idir = outside(idir, REPO_ROOT, "--keep-images")
+        _prepare_dir(idir)
+
+        def keep_images(paths: Sequence[Path]) -> None:
+            for n, src in enumerate(paths, 1):
+                dest = _prepare_target(idir, f"{parsed.shortcode}-{n:02}.jpg")
+                try:
+                    shutil.copyfile(src, dest)
+                except OSError as exc:
+                    raise ConfigError(f"cannot write {dest}: {exc}") from exc
+                stderr.write(f"saved image: {dest}\n")
+
     if args.mp3:
         assert target is not None
         save_audio(
@@ -253,6 +278,7 @@ def _run(
         language=args.language,
         keep=keep,
         images=(image_fetcher or EmbedImageFetcher()) if extractor else None,
+        keep_images=keep_images,
     )
     if args.idea_llm:
         rendered = to_idea(transcript, idea_writer.write(transcript))
@@ -286,6 +312,8 @@ def main(
         parser.error("--ocr cannot be combined with --mp3")
     if args.keep_video and args.mp3:
         parser.error("--keep-video cannot be combined with --mp3")
+    if args.keep_images and not args.ocr:
+        parser.error("--keep-images requires --ocr")
     if args.idea_llm and args.format != "idea":
         parser.error("--idea-llm requires --format idea")
     env = os.environ if env is None else env

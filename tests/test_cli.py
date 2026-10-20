@@ -581,3 +581,54 @@ def test_image_post_without_ocr_hints_at_ocr():
         [URL], downloader=FakeDownloader(fail=NoVideoError("no video --ocr"))
     )
     assert code == 4 and "--ocr" in err
+
+
+def _image_run(argv, **kw):
+    from igt.errors import NoVideoError
+    from tests.fakes import FakeExtractor, FakeImageFetcher
+
+    out, err = io.StringIO(), io.StringIO()
+    code = main(
+        [URL, "--ocr", *argv], env=kw.pop("env", {}), stdout=out, stderr=err,
+        downloader=FakeDownloader(fail=NoVideoError("no video")),
+        transcriber=FakeTranscriber(), extractor=FakeExtractor([(0, "Slide A")]),
+        image_fetcher=FakeImageFetcher(["a", "b"]),
+    )  # fmt: skip
+    return code, out.getvalue(), err.getvalue()
+
+
+def test_keep_images_saves_numbered_jpgs(tmp_path):
+    code, _, err = _image_run(["--keep-images", str(tmp_path / "pics")])
+    assert code == 0
+    saved = sorted(p.name for p in (tmp_path / "pics").iterdir())
+    assert saved == ["ABC123xyz-01.jpg", "ABC123xyz-02.jpg"]
+    assert err.count("saved image:") == 2
+
+
+def test_keep_images_relative_dir_uses_out_root(tmp_path):
+    code, _, _ = _image_run(
+        ["--keep-images", "pics"], env={"IGT_OUT_ROOT": str(tmp_path)}
+    )
+    assert code == 0 and (tmp_path / "pics" / "ABC123xyz-01.jpg").is_file()
+
+
+def test_keep_images_inside_repo_is_rejected():
+    code, _, err = _image_run(["--keep-images", str(REPO_ROOT / "pics")])
+    assert code == 3 and "--keep-images" in err
+
+
+def test_keep_images_on_a_video_is_a_noop(tmp_path):
+    from tests.fakes import FakeExtractor
+
+    code, _, _ = run(
+        [URL, "--ocr", "--keep-images", str(tmp_path / "pics")],
+        extractor=FakeExtractor([(1, "x")]),
+    )
+    assert code == 0 and not list((tmp_path).glob("pics/*"))
+
+
+@pytest.mark.parametrize("extra", [[], ["--mp3"]])
+def test_keep_images_needs_ocr_and_excludes_mp3(extra, capsys):
+    with pytest.raises(SystemExit) as e:
+        main([URL, "--keep-images", "d", *extra])
+    assert e.value.code == 2 and "--keep-images" in capsys.readouterr().err

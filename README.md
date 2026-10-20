@@ -58,6 +58,7 @@ igt URL --mp3                                                  # audio only: wri
 igt URL --format idea --out                                    # project-idea brief: requirements stubs + brainstorm prompts (see below)
 igt URL --ocr --format md                                      # also read on-screen text (see On-screen text)
 igt 'https://www.instagram.com/p/ABC123xyz/?img_index=2&utm=x' --ocr --format md  # image/carousel post: OCR each slide (see Image posts)
+igt IMAGE_POST_URL --ocr --keep-images slides                  # also save the slides as slides/<shortcode>-NN.jpg
 igt IMAGE_POST_URL --ocr --format idea --out                   # project-idea brief from a slide post's text
 igt URL --keep-video ~/videos                                  # also keep the video as ~/videos/<shortcode>.<ext> (see Saving output)
 igt URL --format idea --idea-llm --llm-provider ollama         # add an LLM analysis, run locally (see Project-idea brief)
@@ -92,6 +93,9 @@ igt 'https://www.instagram.com/p/ABC123xyz/' --ocr --format md --out-file slides
   Use `md`, `json` or `idea`; `txt` and `srt` have no transcript for these posts and come out empty.
 - Quote the URL: an unquoted `&` (as in `?img_index=2&...`) backgrounds the command in your shell
   and truncates the URL.
+- `--keep-images DIR` also saves the slides as `DIR/<shortcode>-01.jpg`, `-02.jpg`, ... (requires `--ocr`).
+  A relative `DIR` is under `$IGT_OUT_ROOT` (default: current directory), never inside the repo; saved paths
+  go to stderr. On a video post it does nothing.
 - Slides are never merged, so a repeated slide appears twice. `--ocr-every`, `--ocr-merge`,
   `--keep-video` and `--mp3` do not apply.
 - Mixed posts: video slides are skipped. Only still images are read. Private, login-walled or removed

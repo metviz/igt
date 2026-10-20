@@ -32,7 +32,7 @@ src/igt/
   download.py    Downloader protocol, YtDlpDownloader (mp3= / video= modes), Downloaded (path + metadata)
   ocr.py         TextExtractor protocol; ffmpeg frame sampling + tesseract or rapidocr (default); fuzzy/exact/off merge
   images.py      ImageFetcher protocol, EmbedImageFetcher: Instagram image-post slides via the public /embed/captioned/ page (cdn hosts only).
-                 Used by pipeline.generate() when the downloader raises NoVideoError and --ocr is on (OCR per slide, Transcript.slides=True)
+                 Used by pipeline.generate() when the downloader raises NoVideoError and --ocr is on (OCR per slide, Transcript.slides=True); --keep-images DIR saves the slides via the keep_images callback (same path rules as --keep-video)
   llm.py         IdeaWriter protocol; AnthropicIdeaWriter, OllamaIdeaWriter (stdlib REST), make_writer()
   transcribe.py  Transcriber protocol, FasterWhisperTranscriber (lazy model load)
   pipeline.py    generate(): parse -> download -> transcribe (+ OCR, optional keep= video callback) -> Transcript; save_audio() for --mp3; temp dir always removed
