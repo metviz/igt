@@ -42,6 +42,10 @@ Optional extras: `pip install 'igt[rapidocr]'` (default OCR engine for `--ocr`) 
 
 ## Usage
 
+> **Quote the URL.** Share links often contain `&` (for example `?img_index=2&psln=...`). Unquoted, the shell
+> treats `&` as "run in the background", prints `[1] 12345`, and igt receives a truncated URL. Wrap the URL in
+> single quotes: `igt 'https://www.instagram.com/p/ABC123xyz/?img_index=2&psln=x'`.
+
 ```bash
 igt https://www.instagram.com/reel/ABC123xyz/                 # transcript text to stdout
 igt https://www.youtube.com/watch?v=dQw4w9WgXcQ                # or a YouTube video/short
