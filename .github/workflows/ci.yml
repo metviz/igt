@@ -15,7 +15,8 @@ jobs:
       - uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-      - run: uv sync
+      # macos-latest's newest Python (3.15) has no ctranslate2 wheel; pin a supported one
+      - run: uv sync --python 3.13
       - run: uv run pytest --cov=igt --cov-fail-under=80
 
   live-smoke:
@@ -33,5 +34,5 @@ jobs:
       - uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-      - run: uv sync
+      - run: uv sync --python 3.13
       - run: uv run pytest -m integration -q
