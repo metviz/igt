@@ -7,6 +7,8 @@ from igt.errors import ApiError, ConfigError
 from igt.idea import material
 from igt.models import Transcript
 
+LLM_FORMATS = ("summary", "chapters", "social")
+
 DEFAULT_MODEL = "claude-sonnet-5-5"
 OLLAMA_DEFAULT_MODEL = "llama3.1:8b"
 PROVIDERS = ("anthropic", "ollama")
@@ -24,10 +26,41 @@ _SYSTEM = (
     "Suggested first experiment, Brainstorm prompts. Use ### headings only: "
     "never use # or ##, and add no title. Do not repeat the material."
 )
+_FORMAT_RULES = (
+    "Use only what the material says; invent nothing. Reply in markdown with no "
+    "title, using ### headings if you need any."
+)
+PROMPTS = {
+    "idea": _SYSTEM,
+    "summary": (
+        "Summarise a short video's extracted content. Give a one-sentence gist, "
+        "then 3-7 bullet points of the key facts or steps. " + _FORMAT_RULES
+    ),
+    "chapters": (
+        "Split a video into chapters from its timestamped transcript. Reply with "
+        "one line per chapter: `mm:ss Title` (3-6 words), the first at 00:00, "
+        "using only timestamps that appear in the material. " + _FORMAT_RULES
+    ),
+    "social": (
+        "Draft social posts from a video's content: one X/Twitter post (max 280 "
+        "characters), one LinkedIn post (under 120 words), each with at most 3 "
+        "hashtags. " + _FORMAT_RULES
+    ),
+}
+
+
+def _content(t: Transcript, kind: str) -> str:
+    if kind != "chapters":
+        return material(t)
+    return "\n".join(
+        f"[{int(s.start) // 60:02}:{int(s.start) % 60:02}] {s.text.strip()}"
+        for s in t.segments
+        if s.text.strip()
+    )
 
 
 class IdeaWriter(Protocol):
-    def write(self, transcript: Transcript) -> str: ...
+    def write(self, transcript: Transcript, kind: str = "idea") -> str: ...
 
 
 def _anthropic_client(api_key: str) -> Any:
@@ -64,14 +97,14 @@ class AnthropicIdeaWriter:
                 "--idea-llm needs the anthropic package: pip install 'igt[llm]'"
             ) from exc
 
-    def write(self, transcript: Transcript) -> str:
+    def write(self, transcript: Transcript, kind: str = "idea") -> str:
         client = self._factory(self._key())
         try:
             resp = client.messages.create(
                 model=self._model,
                 max_tokens=2000,
-                system=_SYSTEM,
-                messages=[{"role": "user", "content": material(transcript)}],
+                system=PROMPTS[kind],
+                messages=[{"role": "user", "content": _content(transcript, kind)}],
             )
         except Exception as exc:  # SDK errors vary; never echo the key
             raise ApiError(f"LLM request failed: {exc}") from exc
@@ -120,7 +153,7 @@ class OllamaIdeaWriter:
                 f"Ollama model {self._model!r} not found: ollama pull {self._model}"
             )
 
-    def write(self, transcript: Transcript) -> str:
+    def write(self, transcript: Transcript, kind: str = "idea") -> str:
         try:
             resp = self._http(
                 f"{self._base}/api/chat",
@@ -128,8 +161,8 @@ class OllamaIdeaWriter:
                     "model": self._model,
                     "stream": False,
                     "messages": [
-                        {"role": "system", "content": _SYSTEM},
-                        {"role": "user", "content": material(transcript)},
+                        {"role": "system", "content": PROMPTS[kind]},
+                        {"role": "user", "content": _content(transcript, kind)},
                     ],
                 },
             )
@@ -141,9 +174,7 @@ class OllamaIdeaWriter:
         return text
 
 
-def make_writer(
-    provider: str, model: str | None, env: Mapping[str, str]
-) -> IdeaWriter:
+def make_writer(provider: str, model: str | None, env: Mapping[str, str]) -> IdeaWriter:
     if provider == "ollama":
         return OllamaIdeaWriter(model or OLLAMA_DEFAULT_MODEL, env)
     return AnthropicIdeaWriter(model or DEFAULT_MODEL, env)

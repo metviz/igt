@@ -13,8 +13,12 @@ class Transcriber(Protocol):
 
 class FasterWhisperTranscriber:
     def __init__(
-        self, model_size: str = "base", model_factory: Callable[..., Any] | None = None
+        self,
+        model_size: str = "base",
+        model_factory: Callable[..., Any] | None = None,
+        translate: bool = False,
     ):
+        self._translate = translate
         self._size = model_size
         self._factory = model_factory
         self._model: Any = None
@@ -37,10 +41,12 @@ class FasterWhisperTranscriber:
                 str(audio),
                 language=None if language == "auto" else language,
                 vad_filter=True,
+                task="translate" if self._translate else "transcribe",
             )
             segments = tuple(
                 Segment(s.start, s.end, s.text.strip()) for s in raw
             )  # generator: decode happens here
         except Exception as exc:  # noqa: BLE001 — model/decoder errors are third-party and varied
             raise TranscribeError(f"transcription failed: {exc}") from exc
-        return segments, info.language
+        # translated output is English whatever the source language was
+        return segments, "en" if self._translate else info.language

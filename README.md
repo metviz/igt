@@ -51,8 +51,11 @@ igt https://www.instagram.com/reel/ABC123xyz/                 # transcript text 
 igt https://www.youtube.com/watch?v=dQw4w9WgXcQ                # or a YouTube video/short
 igt https://www.facebook.com/reel/1234567890123456             # or a Facebook reel/video/fb.watch link
 igt https://www.tiktok.com/@someuser/video/7123456789012345678  # or a TikTok video/short link
-igt URL --format md                                            # txt | srt | json | md | idea (md: source URL, metadata, caption, timestamped transcript)
+igt URL --format md                                            # txt | srt | vtt | json | md | idea | summary | chapters | social (md: source URL, metadata, caption, timestamped transcript)
 igt URL --format srt > captions.srt                            # numbered cues with HH:MM:SS,mmm timestamps
+igt URL --format vtt > captions.vtt                            # WebVTT for web video players
+igt URL --translate                                            # speech translated to English (Whisper; OCR text is not translated)
+igt URL --format summary                                       # LLM: gist + bullets; also chapters (mm:ss titles) and social (X + LinkedIn drafts)
 igt URL --language hi --model small                            # skip auto-detect, bigger model
 igt URL --cookies-from firefox                                 # login-walled videos: use your browser session
 igt URL --cookies ~/secrets/instagram-cookies.txt              # ...or an exported cookies file (outside the repo)
@@ -68,12 +71,14 @@ igt URL --keep-video ~/videos                                  # also keep the v
 igt URL --format idea --idea-llm --llm-provider ollama         # add an LLM analysis, run locally (see Project-idea brief)
 ```
 
+`summary`, `chapters` and `social` are written by an LLM, so they need the same setup as `--idea-llm` (`--llm-provider anthropic` needs `ANTHROPIC_API_KEY` and `igt[llm]` and sends the extracted text to Anthropic; `--llm-provider ollama` stays local). `--format summary|chapters|social` turns the LLM on by itself; no `--idea-llm` needed. Output is markdown. `chapters` uses the timestamped transcript, so it fits videos, not image posts.
+
 ## On-screen text (OCR)
 
 `--ocr` downloads the video (up to 720p), samples a frame every `--ocr-every SECONDS` (default 2),
 and reads each frame with an OCR engine. Repeated on-screen text is merged (`--ocr-merge fuzzy`, the default, tolerates OCR jitter and keeps the fullest version of text being revealed; `exact` merges identical text only; `off` keeps every sampled frame). Results appear in
 `--format md` (an "On-screen text" section) and `--format json` (`on_screen`); `txt` and `srt` are
-unchanged. A video with no speech but readable on-screen text succeeds. Not combinable with `--mp3`.
+unchanged. Each item carries its time span: md shows `[00:02-00:05] text` (until the next text appears, or the video's end), json has `start` and `end` in seconds (`end` is null when unknown, and for image posts, which get a `slide` number instead). A video with no speech but readable on-screen text succeeds. Not combinable with `--mp3`.
 
 | `--ocr-engine` | Install | Notes |
 |---|---|---|

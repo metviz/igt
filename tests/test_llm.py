@@ -4,7 +4,9 @@ from igt.errors import ApiError, ConfigError
 from igt.llm import AnthropicIdeaWriter
 from igt.models import Segment, Transcript
 
-T = Transcript("instagram", "Gemma", "w", "en", (Segment(0, 1, "tiny embedding model"),))
+T = Transcript(
+    "instagram", "Gemma", "w", "en", (Segment(0, 1, "tiny embedding model"),)
+)
 
 
 class Block:
@@ -42,6 +44,23 @@ def test_system_prompt_asks_for_level_3_headings_only():
     from igt.llm import _SYSTEM
 
     assert "###" in _SYSTEM and "never use # or ##" in _SYSTEM
+
+
+def test_kinds_use_their_own_prompt():
+    from igt.llm import PROMPTS
+
+    assert set(PROMPTS) == {"idea", "summary", "chapters", "social"}
+    c = FakeClient()
+    writer(c).write(T, "summary")
+    assert c.kw["system"] == PROMPTS["summary"] != PROMPTS["idea"]
+
+
+def test_chapters_sends_timestamped_cues():
+    c = FakeClient()
+    writer(c).write(
+        Transcript("y", "t", "w", "en", (Segment(65, 70, "second"),)), "chapters"
+    )
+    assert "[01:05] second" in c.kw["messages"][0]["content"]
 
 
 def test_check_needs_api_key():

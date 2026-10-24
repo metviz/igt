@@ -12,8 +12,9 @@ class FakeModel:
     def __init__(self, segs=(), lang="en", raises=None):
         self.segs, self.lang, self.raises, self.calls = segs, lang, raises, []
 
-    def transcribe(self, path, language=None, vad_filter=True):
+    def transcribe(self, path, language=None, vad_filter=True, task="transcribe"):
         self.calls.append((path, language, vad_filter))
+        self.task = task
 
         def gen():
             for start, end, text in self.segs:
@@ -79,3 +80,18 @@ def test_model_load_error_becomes_transcribe_error():
 
     with pytest.raises(TranscribeError, match="no model"):
         FasterWhisperTranscriber("tiny", factory).transcribe(Path("a"), "auto")
+
+
+def test_translate_uses_whisper_translate_task_and_reports_english():
+    model = FakeModel([(0, 1, " hola")], lang="es")
+    tr = FasterWhisperTranscriber("tiny", lambda size, **kw: model, translate=True)
+    segs, lang = tr.transcribe(Path("a.m4a"), "auto")
+    assert model.task == "translate" and lang == "en" and segs[0].text == "hola"
+
+
+def test_default_task_is_transcribe():
+    model = FakeModel([(0, 1, "hi")])
+    FasterWhisperTranscriber("tiny", lambda size, **kw: model).transcribe(
+        Path("a"), "auto"
+    )
+    assert model.task == "transcribe"

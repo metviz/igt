@@ -2,8 +2,8 @@
 
 `igt <url>` downloads an Instagram reel/post's, YouTube video's, Facebook reel/video's or TikTok video's
 audio (yt-dlp) and transcribes it locally (faster-whisper).
-Output: `txt | srt | json | md | idea` to stdout, or to a file with `--out` / `--out-file PATH`.
-Extras: `--mp3` (save audio), `--keep-video DIR` (save the video), `--ocr` (on-screen text), `--format idea` (project-idea brief) and `--idea-llm`
+Output: `txt | srt | vtt | json | md | idea | summary | chapters | social` (last three: LLM-written) to stdout, or to a file with `--out` / `--out-file PATH`.
+Extras: `--mp3` (save audio), `--keep-video DIR` (save the video), `--ocr` (on-screen text), `--format idea` (project-idea brief), `--translate` (speech to English), `--format summary|chapters|social` (LLM) and `--idea-llm`
 (LLM analysis). Scope is extraction plus idea/prompt/brainstorm generation; no media indexing or search. Standalone project; it began as the CLI
 counterpart of a Chrome extension (separate repo) but shares no code with it. History: `docs/plans/`.
 
@@ -25,7 +25,7 @@ uv run igt --help
 src/igt/
   url.py         parse_video_url -> ParsedUrl (Instagram + YouTube + Facebook + TikTok; strict host allow-list, canonical URL)
   models.py      Segment, OnScreenText, Transcript (frozen dataclasses)
-  formatters.py  to_txt / to_srt / to_json / to_md, FORMATS registry (includes idea)
+  formatters.py  to_txt / to_srt / to_vtt / to_json / to_md, to_llm_doc (summary/chapters/social wrapper), FORMATS registry (includes idea); on-screen spans (_spans) give md ranges and json `end`
   idea.py        material(), to_idea(): template brief (Requirements checklist, questions, prompts); no LLM.
                  LLM analysis goes under `## Generated analysis`; its #/## headings are demoted to ###
   config.py      REPO_ROOT, outside(), env_path(), out_base() — the ONLY module that knows path policy

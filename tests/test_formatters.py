@@ -40,7 +40,7 @@ def test_json_shape_mirrors_server_payload_and_keeps_unicode():
 
 
 def test_registry_keys():
-    assert set(FORMATS) == {"txt", "srt", "json", "md", "idea"}
+    assert set(FORMATS) == {"txt", "srt", "vtt", "json", "md", "idea"}
 
 
 def test_json_includes_metadata():
@@ -127,7 +127,7 @@ def make_ocr():
 
 def test_json_includes_on_screen():
     data = json.loads(to_json(make_ocr()))
-    assert data["on_screen"] == [{"start": 3.0, "text": "SALE 50%"}]
+    assert data["on_screen"] == [{"start": 3.0, "end": None, "text": "SALE 50%"}]
     assert json.loads(to_json(make()))["on_screen"] == []
 
 
@@ -150,3 +150,59 @@ def test_md_labels_slides_and_skips_empty_transcript():
     )  # fmt: skip
     md = to_md(t)
     assert "[slide 2] Two" in md and "## Transcript" not in md
+
+
+def test_vtt_header_dot_separator_and_skips_blanks():
+    from igt.formatters import to_vtt
+
+    t = make(Segment(0, 1.5, "hi"), Segment(1.5, 2, "  "), Segment(3661.25, 3662, "yo"))
+    assert to_vtt(t) == (
+        "WEBVTT\n\n00:00:00.000 --> 00:00:01.500\nhi\n\n"
+        "01:01:01.250 --> 01:01:02.000\nyo\n"
+    )
+
+
+def test_vtt_empty_is_just_header():
+    from igt.formatters import to_vtt
+
+    assert to_vtt(make()) == "WEBVTT\n"
+
+
+def _timed():
+    from igt.models import OnScreenText, Transcript
+
+    return Transcript(
+        "youtube", "T", "w", "en", (Segment(0, 1, "hi"),), duration=10.0,
+        on_screen=(OnScreenText(2.0, "A"), OnScreenText(5.0, "B")),
+    )  # fmt: skip
+
+
+def test_on_screen_end_is_next_start_else_duration():
+    data = json.loads(to_json(_timed()))
+    assert [(o["start"], o["end"]) for o in data["on_screen"]] == [
+        (2.0, 5.0),
+        (5.0, 10.0),
+    ]
+
+
+def test_md_on_screen_shows_time_ranges():
+    md = to_md(_timed())
+    assert "[00:02-00:05] A\n[00:05-00:10] B" in md
+
+
+def test_json_slides_carry_slide_number_and_no_end():
+    from igt.models import OnScreenText, Transcript
+
+    t = Transcript(
+        "instagram", "P", "i", "", (), on_screen=(OnScreenText(1, "Two"),), slides=True
+    )
+    (o,) = json.loads(to_json(t))["on_screen"]
+    assert o == {"start": 1, "end": None, "slide": 2, "text": "Two"}
+
+
+def test_llm_doc_has_title_source_and_demoted_headings():
+    from igt.formatters import to_llm_doc
+
+    t = make(Segment(0, 1, "hi"))
+    out = to_llm_doc(t, "# Big\n- point")
+    assert out.startswith("# T\n") and "### Big\n- point" in out

@@ -406,8 +406,9 @@ class FakeWriter:
     def check(self):
         self.checked += 1
 
-    def write(self, transcript):
+    def write(self, transcript, kind="idea"):
         self.calls += 1
+        self.kind = kind
         if self.raises:
             raise self.raises
         return self.text
@@ -632,3 +633,34 @@ def test_keep_images_needs_ocr_and_excludes_mp3(extra, capsys):
     with pytest.raises(SystemExit) as e:
         main([URL, "--keep-images", "d", *extra])
     assert e.value.code == 2 and "--keep-images" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("kind", ["summary", "chapters", "social"])
+def test_llm_formats_call_writer_without_idea_llm_flag(kind):
+    w = FakeWriter("- point")
+    code, out, _ = run_llm([URL, "--format", kind], w)
+    assert code == 0 and "- point" in out and out.startswith("# ")
+    assert (w.checked, w.calls, w.kind) == (1, 1, kind)
+
+
+def test_vtt_format_via_cli():
+    code, out, _ = run_llm([URL, "--format", "vtt"], FakeWriter())
+    assert code == 0 and out.startswith("WEBVTT")
+
+
+def test_translate_flag_reaches_transcriber(monkeypatch):
+    import igt.cli as cli
+
+    seen = {}
+
+    class T(FakeTranscriber):
+        def __init__(self, model, translate=False):
+            super().__init__()
+            seen.update(model=model, translate=translate)
+
+    monkeypatch.setattr(cli, "FasterWhisperTranscriber", T)
+    code = main(
+        [URL, "--translate"], env={}, downloader=FakeDownloader(),
+        stdout=io.StringIO(), stderr=io.StringIO(),
+    )  # fmt: skip
+    assert code == 0 and seen == {"model": "base", "translate": True}

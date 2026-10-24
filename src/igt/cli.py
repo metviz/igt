@@ -9,11 +9,11 @@ from igt import __version__
 from igt.config import REPO_ROOT, env_path, outside, out_base
 from igt.download import Downloader, YtDlpDownloader
 from igt.errors import ConfigError, IgtError
-from igt.formatters import FORMATS
+from igt.formatters import FORMATS, to_llm_doc
 from igt.ocr import ENGINES, MERGE_MODES, TextExtractor, make_extractor
 from igt.idea import to_idea
 from igt.images import EmbedImageFetcher, ImageFetcher
-from igt.llm import PROVIDERS, IdeaWriter, make_writer
+from igt.llm import LLM_FORMATS, PROVIDERS, IdeaWriter, make_writer
 from igt.pipeline import generate, save_audio
 from igt.transcribe import FasterWhisperTranscriber, Transcriber
 from igt.url import parse_video_url
@@ -29,6 +29,9 @@ BROWSERS = (
     "vivaldi",
     "safari",
 )
+
+
+_EXT = {"idea": "md", **dict.fromkeys(LLM_FORMATS, "md")}
 
 
 def _positive_float(value: str) -> float:
@@ -53,7 +56,20 @@ def build_parser() -> argparse.ArgumentParser:
             "or TikTok video URL"
         ),
     )
-    p.add_argument("--format", choices=sorted(FORMATS), default="txt")
+    p.add_argument(
+        "--format",
+        choices=sorted([*FORMATS, *LLM_FORMATS]),
+        default="txt",
+        help=(
+            "summary, chapters and social are written by an LLM (see --llm-provider; "
+            "anthropic sends the extracted text to Anthropic)"
+        ),
+    )
+    p.add_argument(
+        "--translate",
+        action="store_true",
+        help="translate speech to English while transcribing (on-screen text is not translated)",
+    )
     p.add_argument(
         "--language", default="auto", help="language code or 'auto' (default)"
     )
@@ -205,7 +221,7 @@ def _run(
     if (
         args.out or args.mp3 or args.out_file is not None
     ):  # validate the destination before the expensive work
-        ext = "mp3" if args.mp3 else {"idea": "md"}.get(args.format, args.format)
+        ext = "mp3" if args.mp3 else _EXT.get(args.format, args.format)
         root, name = _resolve_out(args, env, f"{parsed.shortcode}.{ext}")
         target = _prepare_target(root, name)
     keep = None
@@ -253,6 +269,7 @@ def _run(
         )
         stdout.write(f"{target}\n")
         return
+    use_llm = args.idea_llm or args.format in LLM_FORMATS
     if args.ocr:
         extractor = extractor or make_extractor(
             args.ocr_engine, args.ocr_every, args.ocr_merge
@@ -261,7 +278,7 @@ def _run(
             extractor.check()  # fail fast, before the download
     else:
         extractor = None
-    if args.idea_llm:
+    if use_llm:
         idea_writer = idea_writer or make_writer(args.llm_provider, args.llm_model, env)
         if hasattr(idea_writer, "check"):
             idea_writer.check()  # fail fast, before the download
@@ -274,13 +291,16 @@ def _run(
             **({"video": True} if args.ocr or args.keep_video else {}),
         ),
         extractor=extractor,
-        transcriber=transcriber or FasterWhisperTranscriber(args.model),
+        transcriber=transcriber
+        or FasterWhisperTranscriber(args.model, translate=args.translate),
         language=args.language,
         keep=keep,
         images=(image_fetcher or EmbedImageFetcher()) if extractor else None,
         keep_images=keep_images,
     )
-    if args.idea_llm:
+    if args.format in LLM_FORMATS:
+        rendered = to_llm_doc(transcript, idea_writer.write(transcript, args.format))
+    elif args.idea_llm:
         rendered = to_idea(transcript, idea_writer.write(transcript))
     else:
         rendered = FORMATS[args.format](transcript).rstrip("\n") + "\n"
